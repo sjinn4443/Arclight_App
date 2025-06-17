@@ -9,7 +9,7 @@ This folder contains UI tests for the project. Each test is listed below by numb
 3. **Test 3:** Main interactive button triggers the expected action.
 4. **Test 4:** Responsive layout adapts correctly on mobile and desktop.
 5. **Test 5:** Error messages display when invalid input is submitted.
-6. **Test 6:** Splash screen appears on page load.
+6. **Test 6:** Splash screen appears on page load..
 
 ---
 
