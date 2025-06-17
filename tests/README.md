@@ -2,7 +2,7 @@
 
 This folder contains UI tests for the project. Each test is listed below by number and description.
 
-## Test List
+## Test Lists
 
 1. **Test 1:** Home page loads successfully and displays the main elements.
 2. **Test 2:** Navigation links work and route to the correct sections/pages.
