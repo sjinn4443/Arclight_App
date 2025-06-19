@@ -33,7 +33,7 @@ describe("UI Integration Tests", () => {
     window.dispatchEvent(new Event('resize'));
   });
 
-  test("Home page loads successfully and displays the main elements", () => {
+  test("Home page loads and displays main elements", () => {
     expect(document.getElementById("mainTitle")).not.toBeNull();
     expect(document.getElementById("mainButton")).not.toBeNull();
     expect(document.querySelector("nav")).not.toBeNull();
@@ -95,7 +95,7 @@ describe("UI Integration Tests", () => {
     expect(errorMsg.style.display).toBe("inline");
   });
 
-  test("Splash screen appears on page load", () => {
+  test("Splash screen appears on page load with language selection", () => {
     const splash = document.getElementById("splashScreen");
     expect(splash).not.toBeNull();
     expect(splash.style.display).toBe("block");
