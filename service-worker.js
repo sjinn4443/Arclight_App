@@ -1,3 +1,4 @@
+/* 2025-06-25, SJ */
 /* service-worker.js
  * Arclight PWA – offline‑first, version 4
  * ---------------------------------------

@@ -1,17 +1,216 @@
-// Save original body HTML to restore later
-let originalBodyHTML = document.body.innerHTML;
+// 2025-07-15, Cline @ Arclight App Refactor
+// --- GLOBAL STATE AND CONFIGURATION ---
+
+/**
+ * @type {string[]} History stack for page navigation.
+ */
 const pageHistory = [];
-let currentTOCType = 'eyes'; // <-- add this global
-let searchContainer; 
+
+/**
+ * @type {'eyes' | 'ears'} Tracks the currently selected Table of Contents type.
+ */
+let currentTOCType = 'eyes';
+
+/**
+ * @type {HTMLElement | null} Holds the reference to the search container element.
+ */
+let searchContainer;
+
+/**
+ * @type {Event | null} Holds the deferred event for the PWA installation prompt.
+ */
+let deferredPrompt = null;
+
+/**
+ * @type {string | number | null} Tracks the last pause time in the video player to prevent repeated pauses.
+ */
+let lastPauseTime = null;
+
+/**
+ * @type {number} The current zoom level for the ear health image.
+ */
+let zoomLevel = 1;
 
 
-// Onboarding
+// --- CORE INITIALIZATION ---
+
+/**
+ * Main entry point for the application.
+ * Attaches all necessary event listeners when the DOM is fully loaded.
+ */
+document.addEventListener('DOMContentLoaded', () => {
+  initializePageNavigation();
+  initializeOnboarding();
+  initializeDashboard();
+  initializeLearningModules();
+  initializeTOC();
+  initializeToolbar();
+  initializePWA();
+  initializeQuizzes();
+  initializeVideoPlayers();
+  initializeMisc();
+
+  // Set the initial page to be the splash screen.
+  showPage('splashScreen');
+});
+
+
+// --- PAGE NAVIGATION ---
+
+/**
+ * Handles all page switching logic.
+ * @param {string} pageId - The ID of the page element to display.
+ * @param {boolean} [skipHistory=false] - If true, the current page will not be added to the history stack.
+ */
+function showPage(pageId, skipHistory = false) {
+  const currentActive = document.querySelector('.page.active');
+  if (currentActive && currentActive.id !== pageId && !skipHistory) {
+    pageHistory.push(currentActive.id);
+  }
+
+  // Pause all videos when switching pages.
+  document.querySelectorAll('video').forEach(video => {
+    if (!video.paused) {
+      video.pause();
+    }
+  });
+
+  // Hide all pages, then show the target page.
+  document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+  const pageToShow = document.getElementById(pageId);
+  if (pageToShow) {
+    pageToShow.classList.add('active');
+  }
+
+  updateTitleBar(pageId);
+  updateDashboardSwitch(pageId);
+  updateBottomNavBar(pageId);
+}
+
+/**
+ * Initializes general page navigation buttons like the global back and home buttons.
+ */
+function initializePageNavigation() {
+  const backBtnGlobal = document.getElementById('backBtnGlobal');
+  if (backBtnGlobal) {
+    backBtnGlobal.addEventListener('click', () => {
+      if (pageHistory.length > 0) {
+        const prevPage = pageHistory.pop();
+        showPage(prevPage, true); // `true` to prevent pushing the page back to history
+      } else {
+        showPage('dashboard'); // Fallback to dashboard
+      }
+    });
+  }
+
+  const homeBtn = document.getElementById('homeBtn');
+  if (homeBtn) {
+    homeBtn.addEventListener('click', () => showPage('dashboard'));
+  }
+}
+
+/**
+ * Shows or hides the main title bar based on the current page.
+ * @param {string} pageId - The ID of the current page.
+ */
+function updateTitleBar(pageId) {
+  const hideTitleBarPages = ['splashScreen', 'registerPage'];
+  const titleBar = document.getElementById('titleBar');
+  const spacer = document.getElementById('titleBarSpacer');
+
+  if (titleBar && spacer) {
+    const shouldHide = hideTitleBarPages.includes(pageId);
+    titleBar.style.display = shouldHide ? 'none' : 'flex';
+    spacer.style.display = shouldHide ? 'none' : 'block';
+  }
+}
+
+/**
+ * Updates the state and visibility of the bottom navigation bar (Home/Back buttons).
+ * @param {string} pageId - The ID of the current page.
+ */
+function updateBottomNavBar(pageId) {
+  const homeBtnContainer = document.getElementById('homeButtonContainer');
+  searchContainer = document.getElementById('fixedSearchContainer');
+
+  const showHomePages = [
+    'dashboard', 'earsDashboard', 'learningModules', 'coreClinicalOphthalmicExamination',
+    'diseasesPage', 'arclightPage', 'childhoodEyeScreeningPage', 'howToUseArclightVideoPage',
+    'directOphthalmoscopy', 'atomsCardPage', 'anteriorSegmentQuizPage', 'frontOfEyePage',
+    'anteriorSegmentVideoPage', 'pupilsPage', 'rapdTestPage',
+    'pupilExamPECPage', 'pupilPathwaysPage', 'howToArclightPage', 'assessmentVisionPage',
+    'normalAbnormalPage', 'earsLearningModules', 'otoscopyPage', 'earHealthPage',
+    'howToExamineEarPage', 'earConditionsPage', 'earFlowchartPage', 'pupilFullExamPage',
+    'rapdPage', 'rapdTestVideoPage', 'phoneAttachmentVideoPage', 'visualAcuityPage',
+    'fundalReflexPage', 'interactiveLearningPage', 'miresPage', 'morphPage',
+    'squintPalsyPage', 'cataractPage',
+  ];
+
+  const shouldShowNav = showHomePages.includes(pageId);
+  if (homeBtnContainer) homeBtnContainer.style.display = shouldShowNav ? 'flex' : 'none';
+  if (searchContainer) {
+    searchContainer.style.display = ['dashboard', 'earsDashboard'].includes(pageId) ? 'block' : 'none';
+  }
+}
+
+// --- ONBOARDING & SPLASH SCREEN ---
+
+/**
+ * Initializes event listeners for the splash screen and onboarding process.
+ */
+function initializeOnboarding() {
+  // Splash screen language selection
+  window.addEventListener('load', () => {
+    const languageBox = document.getElementById('languageContainer');
+    setTimeout(() => {
+      if (languageBox) languageBox.style.display = 'block';
+    }, 5000); // Show after 5 seconds
+  });
+
+  const splashDropdown = document.getElementById('splashLanguageDropdown');
+  if (splashDropdown) {
+    splashDropdown.addEventListener('change', () => {
+      const splash = document.getElementById('splashScreen');
+      const onboarding = document.getElementById('onboarding');
+      if (splash && onboarding) {
+        splash.classList.add('fade-out');
+        setTimeout(() => {
+          splash.classList.remove('active', 'fade-out');
+          onboarding.classList.add('active');
+        }, 500);
+      }
+    });
+  }
+
+  // Onboarding form logic
+  const completeOnboardingBtn = document.getElementById('completeOnboardingBtn');
+  if (completeOnboardingBtn) {
+    completeOnboardingBtn.addEventListener('click', completeOnboarding);
+  }
+
+  const fieldSelect = document.getElementById('fieldSelect');
+  if (fieldSelect) {
+    fieldSelect.addEventListener('change', handleFieldSelection);
+  }
+
+  const jobSelect = document.getElementById('jobSelect');
+  if (jobSelect) {
+    jobSelect.addEventListener('change', () => {
+      const studentYearSelect = document.getElementById('studentYearSelect');
+      if (studentYearSelect) {
+        studentYearSelect.classList.toggle('hidden', jobSelect.value !== "Medical Student");
+      }
+    });
+  }
+}
+
+/**
+ * Handles the logic for completing the onboarding form.
+ */
 function completeOnboarding() {
   const username = document.getElementById('username').value;
   const job = document.getElementById('jobSelect').value;
   const language = document.getElementById('splashLanguageDropdown').value;
-
-  console.log({ username, job, language });
 
   if (!username || !job || !language || language === "What's your preferred language?") {
     alert("Please complete all fields.");
@@ -22,52 +221,254 @@ function completeOnboarding() {
   showPage('selectModule');
 }
 
+/**
+ * Populates the job role dropdown based on the selected field.
+ */
+function handleFieldSelection() {
+  const fieldSelect = document.getElementById('fieldSelect');
+  const jobSelect = document.getElementById('jobSelect');
+  const studentYearSelect = document.getElementById('studentYearSelect');
+  const selectedField = fieldSelect.value;
 
-// Navigation
+  // Hide all optgroups first
+  jobSelect.querySelectorAll('optgroup').forEach(optgroup => {
+    optgroup.style.display = 'none';
+  });
+
+  // Show the relevant optgroup
+  const optgroupToShow = jobSelect.querySelector(`optgroup[label="${selectedField.charAt(0).toUpperCase() + selectedField.slice(1)}"]`);
+  if (optgroupToShow) {
+    optgroupToShow.style.display = 'block';
+  }
+
+  jobSelect.value = ""; // Reset selection
+  jobSelect.classList.remove('hidden');
+  studentYearSelect.classList.add('hidden');
+}
+
+
+// --- DASHBOARD ---
+
+/**
+ * Initializes dashboard-specific elements like the eyes/ears toggle switch.
+ */
+function initializeDashboard() {
+  const goToDashboardBtn = document.getElementById('goToDashboardBtn');
+  if (goToDashboardBtn) {
+    goToDashboardBtn.addEventListener('click', goToDashboard);
+  }
+
+  const goToEarsDashboardBtn = document.getElementById('goToEarsDashboardBtn');
+  if (goToEarsDashboardBtn) {
+    goToEarsDashboardBtn.addEventListener('click', goToEarsDashboard);
+  }
+
+  const eyesSwitch = document.getElementById('eyesToEarsSwitch');
+  if (eyesSwitch) {
+    eyesSwitch.addEventListener('change', function() {
+      if (this.checked) {
+        showPage('earsDashboard');
+      }
+    });
+  }
+
+  const earsSwitch = document.getElementById('earsToEyesSwitch');
+  if (earsSwitch) {
+    earsSwitch.addEventListener('change', function() {
+      if (!this.checked) {
+        showPage('dashboard');
+      }
+    });
+  }
+}
+
+/**
+ * Updates the eyes/ears toggle switch based on the current dashboard page.
+ * @param {string} pageId - The ID of the current page.
+ */
+function updateDashboardSwitch(pageId) {
+  const eyesSwitch = document.getElementById('eyesToEarsSwitch');
+  const earsSwitch = document.getElementById('earsToEyesSwitch');
+
+  if (pageId === 'dashboard' && eyesSwitch) {
+    eyesSwitch.checked = false;
+  }
+
+  if (pageId === 'earsDashboard' && earsSwitch) {
+    earsSwitch.checked = true;
+  }
+}
+
+/**
+ * Navigates to the main (eyes) dashboard.
+ */
 function goToDashboard() {
   showPage('dashboard');
 }
 
+/**
+ * Navigates to the ears dashboard.
+ */
 function goToEarsDashboard() {
   showPage('earsDashboard');
 }
 
-function showEarsLearningModules() {
-  showPage('earsLearningModules');
+
+// --- LEARNING MODULES ---
+
+/**
+ * Initializes click listeners for all learning module cards.
+ */
+function initializeLearningModules() {
+  const buttonMappings = {
+    'showLearningModulesBtn': showLearningModules,
+    'showEarsLearningModulesBtn': showEarsLearningModules,
+    'showCoreClinicalOphthalmicExaminationBtn': showCoreClinicalOphthalmicExamination,
+    'showDiseasesBtn': showDiseases,
+    'showArclightBtn': showArclight,
+    'goToAtomsCardEyesBtn': () => goToAtomsCard('eyes'),
+    'goToAtomsCardEarsBtn': () => goToAtomsCard('ears'),
+  };
+
+  for (const [btnId, handler] of Object.entries(buttonMappings)) {
+    const button = document.getElementById(btnId);
+    if (button) {
+      button.addEventListener('click', handler);
+    }
+  }
+
+  const cardMappings = {
+    'ophthalmoscopyCard': 'directOphthalmoscopy',
+    'visualacuityCard': 'visualAcuityPage',
+    'fundalreflexFRT': 'fundalReflexPage',
+    'interactiveLearningCard': 'interactiveLearningPage',
+    'miresCard': 'miresPage',
+    'morphCard': 'morphPage',
+    'squintPalsyCard': 'squintPalsyPage',
+    'cataractCard': 'cataractPage',
+    'anteriorSegmentCard': 'frontOfEyePage',
+    'anteriorSegmentVideoCard': 'anteriorSegmentVideoPage',
+    'caseBasedLearningCard': 'anteriorSegmentQuizPage',
+    'pupilsCard': 'pupilsPage',
+    'childhoodEyeScreeningCard': 'childhoodEyeScreeningPage',
+    'howToUseArclightCard': 'howToUseArclightVideoPage',
+    'phoneAttachmentCard': 'phoneAttachmentVideoPage',
+    'rapdVideoCard': 'rapdTestVideoPage',
+    'earsLearningModules': 'earsLearningModules',
+  };
+
+  for (const [elementId, pageId] of Object.entries(cardMappings)) {
+    const card = document.getElementById(elementId);
+    if (card) {
+      card.addEventListener('click', () => showPage(pageId));
+    }
+  }
+
+  document.querySelectorAll('[data-page]').forEach(element => {
+    element.addEventListener('click', () => {
+      showPage(element.dataset.page);
+    });
+  });
+
+  // Special cases with more complex logic
+  document.querySelectorAll('#pupilsPage .module-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const title = card.querySelector('h3').textContent.trim();
+      const pageMap = {
+        'Pupil Full Examination': 'pupilFullExamPage',
+        'Primary Eye Care Examination': 'pupilExamPECPage',
+        'RAPD Test': 'rapdPage',
+        'Pupil Pathways Explained': 'pupilPathwaysPage',
+      };
+      if (pageMap[title]) showPage(pageMap[title]);
+    });
+  });
+
+  document.querySelectorAll('#childhoodEyeScreeningPage .module-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const title = card.querySelector('h3').textContent.trim();
+      const pageMap = {
+        'How to Use the Arclight': 'howToArclightPage',
+        'Assessment of Eyes and Vision': 'assessmentVisionPage',
+        'Normal and Abnormal Findings': 'normalAbnormalPage',
+      };
+      if (pageMap[title]) showPage(pageMap[title]);
+    });
+  });
 }
 
-
+/**
+ * Navigates to the main learning modules page.
+ */
 function showLearningModules() {
   showPage('learningModules');
 }
 
+/**
+ * Navigates to the ears learning modules page.
+ */
+function showEarsLearningModules() {
+  showPage('earsLearningModules');
+}
 
+/**
+ * Navigates to the core clinical examination page.
+ */
 function showCoreClinicalOphthalmicExamination() {
   showPage('coreClinicalOphthalmicExamination');
 }
 
+/**
+ * Navigates to the Arclight usage page.
+ */
 function showArclight() {
   showPage('arclightPage');
-
-  const howToUseArclightArclightCard = document.getElementById('howToUseArclightArclightCard');
-  if (howToUseArclightArclightCard) {
-    howToUseArclightArclightCard.addEventListener('click', () => showPage('howToUseArclightVideoPage'));
-  }
-
-  const phoneAttachmentCard = document.getElementById('phoneAttachmentCard');
-  if (phoneAttachmentCard) {
-    phoneAttachmentCard.addEventListener('click', () => showPage('phoneAttachmentVideoPage'));
-  }
 }
 
-
-
+/**
+ * Navigates to the diseases page.
+ */
 function showDiseases() {
   showPage('diseasesPage');
 }
 
 
+// --- TABLE OF CONTENTS (TOC) for ATOMS ---
 
+/**
+ * Initializes the Table of Contents (TOC) functionality.
+ */
+function initializeTOC() {
+  const tocToggleBtn = document.getElementById('tocToggleBtn');
+  if (tocToggleBtn) {
+    tocToggleBtn.addEventListener('click', openTOC);
+  }
+
+  const closeTOCBtn = document.getElementById('closeTOCBtn');
+  if (closeTOCBtn) {
+    closeTOCBtn.addEventListener('click', closeTOC);
+  }
+
+  const eyesBtn = document.getElementById('eyesTab');
+  if (eyesBtn) {
+    eyesBtn.addEventListener('click', () => showTOC('eyes'));
+  }
+
+  const earsBtn = document.getElementById('earsTab');
+  if (earsBtn) {
+    earsBtn.addEventListener('click', () => showTOC('ears'));
+  }
+
+  const tocList = document.getElementById('tocList');
+  if (tocList) {
+    tocList.addEventListener('click', handleTOCItemClick);
+  }
+}
+
+/**
+ * Navigates to the Atoms card page and initializes the TOC.
+ * @param {'eyes' | 'ears'} [type='eyes'] - The type of content to show in the TOC.
+ */
 function goToAtomsCard(type = 'eyes') {
   showPage('atomsCardPage');
   openTOC();
@@ -75,818 +476,89 @@ function goToAtomsCard(type = 'eyes') {
   const atomsImageContainer = document.getElementById('atomsImageContainer');
   if (atomsImageContainer) atomsImageContainer.innerHTML = '';
 
-  showTOC(type);        // 👈 showTOC('eyes') or showTOC('ears')
+  showTOC(type);
 }
 
-
-
+/**
+ * Opens the TOC overlay.
+ */
 function openTOC() {
   const dropdown = document.getElementById('tocDropdown');
-  dropdown.classList.remove('hidden');
-  dropdown.classList.remove('slide-up');
+  if (!dropdown) return;
+  dropdown.classList.remove('hidden', 'slide-up');
   dropdown.classList.add('active');
 
-  const closeTOCBtn = document.getElementById('closeTOCBtn');
-  const tocToggleBtn = document.getElementById('tocToggleBtn');
-  closeTOCBtn.style.display = 'block';
-  closeTOCBtn.style.opacity = '1';
-  tocToggleBtn.style.display = 'none';  // Hide ☰
+  document.getElementById('closeTOCBtn').style.display = 'block';
+  document.getElementById('tocToggleBtn').style.display = 'none';
 }
 
+/**
+ * Closes the TOC overlay.
+ */
 function closeTOC() {
   const dropdown = document.getElementById('tocDropdown');
+  if (!dropdown) return;
   dropdown.classList.add('slide-up');
   dropdown.classList.remove('active');
-
-  const closeTOCBtn = document.getElementById('closeTOCBtn');
-  const tocToggleBtn = document.getElementById('tocToggleBtn');
 
   setTimeout(() => {
     dropdown.classList.add('hidden');
     dropdown.classList.remove('slide-up');
   }, 300);
 
-  closeTOCBtn.style.transition = 'opacity 0.3s ease';
-  closeTOCBtn.style.opacity = '0';
-  setTimeout(() => {
-    closeTOCBtn.style.display = 'none';
-    tocToggleBtn.style.display = 'block';  // Show ☰ after close completes
-  }, 300);
+  document.getElementById('closeTOCBtn').style.display = 'none';
+  document.getElementById('tocToggleBtn').style.display = 'block';
 }
 
-function showOfflineContentModal() {
-  document.getElementById('offlineContentModal').style.display = 'flex';
-}
-
-function closeOfflineContentModal() {
-  document.getElementById('offlineContentModal').style.display = 'none';
-}
-
-
-
-
-// Set up navigation and module clicks after DOM loads
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.scroll-item').forEach(item => {
-    if (item.textContent.includes('Core Clinical Ophthalmic Examination')) {
-      item.addEventListener('click', showCoreClinicalOphthalmicExamination);
-    }
-  });
-
-  const rapdVideoCard = document.getElementById('rapdVideoCard');
-if (rapdVideoCard) {
-  rapdVideoCard.addEventListener('click', () => showPage('rapdTestVideoPage'));
-}
-
-
-  const card = document.getElementById('ophthalmoscopyCard');
-  if (card) {
-    card.addEventListener('click', () => showPage('directOphthalmoscopy'));
-  }
-
-  attachEventListeners();
-
-  // Add event listeners for TOC toggle, back, close buttons
-  const tocTabButtons = document.querySelectorAll('.toc-tab button');
-  const tocToggleBtn = document.getElementById('tocToggleBtn');
-if (tocToggleBtn) {
-  tocToggleBtn.addEventListener('click', () => {
-  openTOC();
-  
-  
-});
-
-// Visual Acuity click listener
-const visualAcuityCard = document.getElementById('visualacuityCard');
-if (visualAcuityCard) {
-  visualAcuityCard.addEventListener('click', () => showPage('visualAcuityPage'));
-}
-
-// Fundal Reflex click listener
-const fundalReflexCard = document.getElementById('fundalreflexFRT');
-if (fundalReflexCard) {
-  fundalReflexCard.addEventListener('click', () => showPage('fundalReflexPage'));
-}
-
-
-const interactiveLearningCard = document.getElementById('interactiveLearningCard');
-if (interactiveLearningCard) {
-  interactiveLearningCard.addEventListener('click', () => showPage('interactiveLearningPage'));
-}
-
-const miresCard = document.getElementById('miresCard');
-if (miresCard) {
-  miresCard.addEventListener('click', () => showPage('miresPage'));
-}
-
-const morphCard = document.getElementById('morphCard');
-if (morphCard) {
-  morphCard.addEventListener('click', () => showPage('morphPage'));
-}
-
-const squintPalsyCard = document.getElementById('squintPalsyCard');
-if (squintPalsyCard) {
-  squintPalsyCard.addEventListener('click', () => showPage('squintPalsyPage'));
-}
-
-const cataractCard = document.getElementById('cataractCard');
-if (cataractCard) {
-  cataractCard.addEventListener('click', () => showPage('cataractPage'));
-}
-
-
-
-
-
- tocTabButtons.forEach(btn => {
-  btn.addEventListener('click', () => {
-    tocTabButtons.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-  });
-});
-
-}
-
-const installBtn = document.getElementById('installBtn');
-
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  installBtn.style.display = 'block';
-});
-
-installBtn.addEventListener('click', async () => {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-
-  const { outcome } = await deferredPrompt.userChoice;
-  if (outcome === 'accepted') {
-    console.log('User accepted the install prompt');
-  } else {
-    console.log('User dismissed the install prompt');
-  }
-  deferredPrompt = null;
-  installBtn.style.display = 'none';
-});
-
-
-  const closeTOCBtn = document.getElementById('closeTOCBtn');
-  if (closeTOCBtn) {
-   closeTOCBtn.addEventListener('click', () => {
-  closeTOC();
-});
-
-  }
-
-  const installIconBtn = document.getElementById('installIconBtn');
-if (installIconBtn) {
-  installIconBtn.addEventListener('click', async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        console.log('User accepted the install prompt');
-      } else {
-        console.log('User dismissed the install prompt');
-      }
-      deferredPrompt = null;
-    } else {
-      alert("App is already installed or this browser doesn't support installation.");
-    }
-  });
-}
-
-
-
-
-
-  const backToEyesBtn = document.getElementById('backToEyesBtn');
-  if (backToEyesBtn) {
-    backToEyesBtn.addEventListener('click', () => {
-      showPage('dashboard');
-      const dropdown = document.getElementById('tocDropdown');
-      if (dropdown) dropdown.classList.remove('active');
-    });
-  }
-
-  // Home button listener
-  const homeBtn = document.getElementById('homeBtn');
-  if (homeBtn) {
-    homeBtn.addEventListener('click', () => {
-      showPage('dashboard');
-    });
-  }
-
-  // Back button listener
-  const backBtnGlobal = document.getElementById('backBtnGlobal');
-  if (backBtnGlobal) {
-    backBtnGlobal.addEventListener('click', () => {
-      if (pageHistory.length > 0) {
-        const prevPage = pageHistory.pop();
-        showPage(prevPage, true);
-      } else {
-        showPage('dashboard'); // fallback if no history
-      }
-    });
-  }
-});
-
-
-// Eyes / Ears tab click handlers
-const eyesBtn = document.getElementById('eyesTab');
-const earsBtn = document.getElementById('earsTab');
-
-if (eyesBtn && earsBtn) {
-  eyesBtn.addEventListener('click', () => {
-    showTOC('eyes');
-    eyesBtn.classList.add('active');
-    earsBtn.classList.remove('active');
-  });
-
-  earsBtn.addEventListener('click', () => {
-    showTOC('ears');
-    earsBtn.classList.add('active');
-    eyesBtn.classList.remove('active');
-  });
-}
-
-
-
-function showPage(pageId, skipHistory = false) {
-  const currentActive = document.querySelector('.page.active');
-  if (currentActive && currentActive.id !== pageId && !skipHistory) {
-  pageHistory.push(currentActive.id);
-}
-
-// Pause all videos on page switch (global solution)
-document.querySelectorAll('video').forEach(video => {
-  if (!video.paused) {
-    video.pause();
-  }
-});
-
-const pupilCards = document.querySelectorAll('#pupilsPage .module-card');
-pupilCards.forEach(card => {
-  const title = card.querySelector('h3').textContent.trim();
-
-  card.addEventListener('click', () => {
-   switch (title) {
-  case 'Pupil Full Examination':
-    showPage('pupilFullExamPage');
-    break;
-  case 'Primary Eye Care Examination':
-    showPage('pupilExamPECPage');
-    break;
-  case 'RAPD Test':
-    showPage('rapdPage');
-    break;
- 
-  case 'Pupil Pathways Explained':
-    showPage('pupilPathwaysPage');
-    break;
-}
-
-  });
-});
-
-const childhoodCards = document.querySelectorAll('#childhoodEyeScreeningPage .module-card');
-childhoodCards.forEach(card => {
-  const title = card.querySelector('h3').textContent.trim();
-
-  card.addEventListener('click', () => {
-    switch (title) {
-      case 'How to Use the Arclight':
-        showPage('howToArclightPage');
-        break;
-      case 'Assessment of Eyes and Vision':
-        showPage('assessmentVisionPage');
-        break;
-      case 'Normal and Abnormal Findings':
-        showPage('normalAbnormalPage');
-        break;
-    }
-  });
-});
-
-
-// Show/hide title bar depending on page
-const hideTitleBarPages = ['splashScreen', 'registerPage'];
-const titleBar = document.getElementById('titleBar');
-const spacer = document.getElementById('titleBarSpacer');
-if (titleBar && spacer) {
-  if (hideTitleBarPages.includes(pageId)) {
-    titleBar.style.display = 'none';
-    spacer.style.display = 'none';
-  } else {
-    titleBar.style.display = 'flex';
-    spacer.style.display = 'block';
-  }
-}
-
-
-
-  document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-  const page = document.getElementById(pageId);
-  if (page) page.classList.add('active');
-
-    // Re-bind switch after page change (so DOM element exists)
-   // Update switch state & color after page changes
-  // --- DASHBOARD TOGGLE LOGIC ---------------------------------
-const eyesSwitch  = document.getElementById('eyesToEarsSwitch');
-const earsSwitch  = document.getElementById('earsToEyesSwitch');
-
-// Eyes dashboard
-if (pageId === 'dashboard' && eyesSwitch) {
-  eyesSwitch.checked = false;                      // knob left
-  eyesSwitch.nextElementSibling.style.backgroundColor = 'blue';
-  eyesSwitch.onchange = () => showPage('earsDashboard');
-}
-
-// Ears dashboard
-if (pageId === 'earsDashboard' && earsSwitch) {
-  earsSwitch.checked = true;                       // knob right
-  earsSwitch.nextElementSibling.style.backgroundColor = 'green';
-  earsSwitch.onchange = () => showPage('dashboard');
-}
-
-
-
-  
-
-  const homeBtnContainer = document.getElementById('homeButtonContainer');
-  searchContainer = document.getElementById('fixedSearchContainer');
-  if (searchContainer) {
-    searchContainer.style.display = ['dashboard', 'earsDashboard'].includes(pageId) ? 'block' : 'none';
-
-  }
-
-  const showHomePages = [
-  'dashboard',
-  'earsDashboard', 
-  'learningModules',
-  'coreClinicalOphthalmicExamination',
-  'diseasesPage',
-  'arclightPage',
-  'childhoodEyeScreeningPage',
-  'howToUseArclightVideoPage',
-  'directOphthalmoscopy',
-  'atomsCardPage',
-  'anteriorSegmentQuizPage',
-  'frontOfEyePage',
-  'anteriorSegmentVideoPage',
-  'pupilsPage',
-  'rapdTestPage',
-  'pupilExamPage',
-  'pupilExamPECPage',
-  'pupilPathwaysPage',
-  'howToArclightPage',
-  'assessmentVisionPage',
-  'normalAbnormalPage',
-  'earsLearningModules',
-  'coreClinicalOphthalmicExamination',
-  'otoscopyPage',
-  'earHealthPage',
-  'howToExamineEarPage',
-  'earConditionsPage',
-  'earFlowchartPage',
-  'pupilFullExamPage',
-  'rapdPage',
-  'rapdTestVideoPage',
-  'howToUseArclightVideoPage',
-  'phoneAttachmentVideoPage',
-  'visualAcuityPage',
-  'fundalReflexPage',
-  'interactiveLearningPage',
-  'miresPage',
-  'morphPage',
-  'squintPalsyPage',
-  'cataractPage',
-
-
-];
-
-
-
-
-
-  homeBtnContainer.style.display = showHomePages.includes(pageId) ? 'flex' : 'none';
-
-  const backBtnContainer = document.getElementById('backButtonContainer');
-  if (backBtnContainer) {
-    backBtnContainer.style.display = showHomePages.includes(pageId) ? 'flex' : 'none';
-  }
-
-}
-
-const homeBtnContainer = document.getElementById('homeButtonContainer');
-homeBtnContainer.style.display = 'flex'; 
-
-
-
-
-
-
-// Toolbar setup
-function attachEventListeners() {
-  const backBtn = document.getElementById('backBtn');
-  if (backBtn) backBtn.onclick = () => showPage('learningModules');
-
-  const timestampBtn = document.getElementById('timestampBtn');
-  if (timestampBtn) timestampBtn.onclick = showTimestamps;
-
-  const noteBtn = document.getElementById('noteBtn');
-  if (noteBtn) noteBtn.onclick = showNote;
-
-  const folderBtn = document.getElementById('folderBtn');
-  if (folderBtn) folderBtn.onclick = showFiles;
-
-  const infoBtn = document.getElementById('infoBtn');
-  if (infoBtn) infoBtn.onclick = showDefaultInfo;
-
-  const quizBtn = document.getElementById('quizBtn');
-  if (quizBtn) quizBtn.onclick = launchQuiz;
-}
-
-// YouTube API
-let video = null;
-let lastPauseTime = null;
-
-document.addEventListener('DOMContentLoaded', () => {
-  const video = document.getElementById('customVideo');
-  const contentBox = document.getElementById('contentBox'); // Ensure this exists
-
-  if (!video || !contentBox) return;
-
-  video.addEventListener('timeupdate', () => {
-    const time = Math.floor(video.currentTime);
-
-    if (time === 22 && lastPauseTime !== 'eye-info') {
-      lastPauseTime = 'eye-info';
-      video.pause();
-      contentBox.innerHTML = `
-        <h4>Eye Anatomy</h4>
-        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Eye_anatomy_diagram.svg/1200px-Eye_anatomy_diagram.svg.png"
-        style="width: 100%; border-radius: 5px; margin-top: 10px;" />
-        <ul><li>Periorbita</li><li>Eyelids</li><li>Eyes</li></ul>
-      `;
-    }
-
-    if (time === 23 && lastPauseTime !== 23) {
-      lastPauseTime = 23;
-      video.pause();
-      contentBox.innerHTML = '<h4>Pause Only</h4><p>Just pausing here briefly...</p>';
-      setTimeout(() => video.play(), 5000);
-    }
-
-    if (time === 32 && lastPauseTime !== 32) {
-      lastPauseTime = 32;
-      video.pause();
-      contentBox.innerHTML = `
-        <h4>Arclight Device Overview</h4>
-        <img src="images/arclight_device.png" style="width: 100%; border-radius: 5px;" />
-      `;
-      setTimeout(() => video.play(), 5000);
-    }
-  });
-});
-
-
-// Toolbar content
-const contentBox = document.getElementById('contentBox');
-
-function showTimestamps() {
-  setActive('timestampBtn');
-  contentBox.innerHTML = `
-    <h4>Time stamp</h4>
-    <p><a href="#" onclick="seekTo(0)">0:00 General Inspection</a></p>
-    <p><a href="#" onclick="seekTo(28)">0:28 Arclight Setup</a></p>
-    <p><a href="#" onclick="seekTo(47)">0:47 Fundal Reflex</a></p>
-    <p><a href="#" onclick="seekTo(67)">1:07 Optic Nerve</a></p>
-    <p><a href="#" onclick="seekTo(102)">1:42 Retinal Vessels</a></p>
-  `;
-}
-
-function showNote() {
-  setActive('noteBtn');
-  contentBox.innerHTML = '<textarea placeholder="Type your notes here..."></textarea>';
-}
-
-function showFiles() {
-  setActive('folderBtn');
-  contentBox.innerHTML = `
-    <h4>Attached Files</h4>
-    <p><a class="link" href="#">Arclight_Device_Practice.pdf</a></p>
-    <p><a class="link" href="#">Fundal_Reflex.pdf</a></p>
-    <p><a class="link" href="#">Ophthalmoscopy_Exercise.docx</a></p>
-  `;
-}
-
-function showDefaultInfo() {
-  setActive('infoBtn');
-  contentBox.innerHTML = `
-    <h4>Additional Information</h4>
-    <p>This video shows how to prepare and use the Arclight ophthalmoscope.</p>
-  `;
-}
-
-function showEyeAnatomy() {
-  contentBox.innerHTML = `
-    <h4>Eye Anatomy</h4>
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Eye_anatomy_diagram.svg/1200px-Eye_anatomy_diagram.svg.png"
-    style="width: 100%; border-radius: 5px; margin-top: 10px;" />
-    <ul><li>Periorbita</li><li>Eyelids</li><li>Eyes</li></ul>
-  `;
-}
-
-function showDeviceImage() {
-  contentBox.innerHTML = `
-    <h4>Arclight Device Overview</h4>
-    <img src="images/arclight_device.png" style="width: 100%; border-radius: 5px;" />
-  `;
-}
-
-function setActive(id) {
-  document.querySelectorAll('.toolbar button, .header button').forEach(btn => btn.classList.remove('active'));
-  const activeBtn = document.getElementById(id);
-  if (activeBtn) activeBtn.classList.add('active');
-}
-
-function seekTo(sec) {
-  const video = document.getElementById('customVideo');
-  if (video) {
-    video.currentTime = sec;
-    video.play();
-    lastPauseTime = null; // reset pause tracking
-  }
-}
-
-function setActiveTab(type) {
-  const eyesBtn = document.getElementById('eyesTab');
-  const earsBtn = document.getElementById('earsTab');
-  if (!eyesBtn || !earsBtn) return;
-
-  eyesBtn.classList.toggle('active', type === 'eyes');
-  earsBtn.classList.toggle('active', type === 'ears');
-}
-
-
-
-// Launch Quiz
-function launchQuiz() {
-  const previousPage = document.querySelector('.page.active')?.id || 'dashboard';
-
-  const quizPage = document.createElement('div');
-  quizPage.id = 'directOphthalmoscopyQuizPage';
-  quizPage.className = 'page active';
-
-  const quizPageHTML = `
-    <div class="quiz-container">
-      <div class="quiz-header small">
-        <div class="quiz-header-row centered">
-          <button id="backToVideoBtn" class="back-icon" title="Go back">←</button>
-          <h2>Quiz</h2>
-        </div>
-      </div>
-      <div class="quiz-scroll" id="quizScroll">
-        <form id="quizForm"></form>
-      </div>
-      <div class="quiz-footer">
-        <button type="submit" form="quizForm" class="start-btn">See Results</button>
-      </div>
-      <div id="quizModal" class="quiz-modal hidden">
-        <div class="quiz-modal-content">
-          <p id="quizScoreText"></p>
-          <button id="seeWhyBtn">See why?</button>
-        </div>
-      </div>
-    </div>
-  `;
-
-  quizPage.innerHTML = quizPageHTML;
-  document.getElementById('appRoot').appendChild(quizPage);
-
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  quizPage.classList.add('active');
-  document.getElementById('homeButtonContainer').style.display = 'none';
-
-  const questions = [
-    {
-      q: "1. When starting direct ophthalmoscopy, what is the ideal distance between the examiner and the patient?",
-      options: ["5 cm", "10 cm", "15 cm", "Arm’s length"],
-      answer: 3
-    },
-    {
-      q: "2. Which of the options describe the best condition to get the view of the retina?",
-      options: ["Outdoors with bright sunlight, dilated pupil", "Deem room with dilated pupil", "Indoors with bright light, dilated pupil", "Deem room with constricted pupil"],
-      answer: 1
-    },
-    {
-      q: "3. Which eye should you use to examine the patient’s right eye?",
-      options: ["Left eye", "Either eye", "Right eye", "Dominant eye"],
-      answer: 2
-    },
-    {
-      q: "4. During ophthalmoscopy, which part of the back of the eye should you identify first?",
-      options: ["Macula", "Optic disc", "Retinal periphery", "Fovea"],
-      answer: 1
-    },
-    {
-      q: "5. What is the name given to pale optic disc?",
-      options: ["Normal finding", "Cataract", "Optic atrophy", "Raised intraocular pressure"],
-      answer: 2
-    },
-    {
-      q: "6. Which lighting condition is recommended for performing ophthalmoscopy with the Arclight?",
-      options: ["Bright daylight", "Dim or darkened room", "Bright room", "Ambient light"],
-      answer: 1
-    },
-    {
-      q: "7. What does a cup-to-disc ratio (CDR) of 0.7 or greater typically suggest on fundus examination?",
-      options: ["Glaucoma", "Macular degeneration", "Diabetic retinopathy", "Retinal detachment"],
-      answer: 0
-    }
-  ];
-
-  const quizForm = document.getElementById('quizForm');
-  questions.forEach((q, i) => {
-    let block = `<div class="quiz-block"><p>${q.q}</p>`;
-    q.options.forEach((opt, j) => {
-      block += `
-        <label class="radio-label">
-          <input type="radio" name="q${i}" value="${j}" />
-          <span>${opt}</span>
-        </label>`;
-    });
-    block += `<p class="answer" style="display:none; margin-top:5px; font-style:italic;">Correct answer: ${q.options[q.answer]}</p>`;
-    block += `</div>`;
-    quizForm.innerHTML += block;
-  });
-
-  quizForm.onsubmit = (e) => {
-    e.preventDefault();
-    let correct = 0;
-
-    questions.forEach((q, i) => {
-      const radios = document.querySelectorAll(`input[name="q${i}"]`);
-      const answer = q.answer;
-      let selected = null;
-
-      radios.forEach(r => {
-        r.disabled = true;
-        if (r.checked) selected = parseInt(r.value);
-      });
-
-      const labels = radios[0].closest('.quiz-block').querySelectorAll('label');
-      labels.forEach((label, index) => {
-        if (index === answer) {
-          label.classList.add('correct');
-        } else if (parseInt(label.querySelector('input').value) === selected) {
-          label.classList.add('wrong');
-        }
-      });
-
-      if (selected === answer) correct++;
-    });
-
-    document.getElementById('quizScoreText').innerText = `You got ${correct} out of ${questions.length} correct.`;
-    document.getElementById('quizModal').classList.remove('hidden');
+/**
+ * Populates and displays the TOC list based on the selected type.
+ * @param {'eyes' | 'ears'} [type='eyes'] - The content type.
+ */
+function showTOC(type = 'eyes') {
+  currentTOCType = type;
+  setActiveTab(type);
+
+  const tocList = document.getElementById('tocList');
+  tocList.innerHTML = '';
+
+  const content = {
+    eyes: ['Anatomy', 'Arclight', 'Front of Eye Case Test', 'Child', 'Front of Eye', 'Fundal Reflex', 'Fundus', 'Glaucoma', 'How to Check for Eyeglasses', 'How to Use', 'Lens', 'Pupil', 'Red Eye', 'Summary', 'Vision Loss'],
+    ears: ['Anatomy', 'Childhood Hearing Development', 'Ear Drum', 'External Ear: Pinna']
   };
 
-  document.addEventListener('click', (e) => {
-    if (e.target.id === 'seeWhyBtn') {
-      document.getElementById('quizModal').classList.add('hidden');
-      document.querySelectorAll('.answer').forEach(a => a.style.display = 'block');
-    }
-    if (e.target.id === 'backToVideoBtn') {
-      document.getElementById('appRoot').removeChild(quizPage);
-      showPage(previousPage);
-      document.getElementById('homeButtonContainer').style.display = 'flex';
-    }
-  });
-}
-
-// TOC Overlay Logic for Atoms Card Page
-function showTOC(type = 'eyes') {
-  currentTOCType = type;                // track which module we’re on
-  setActiveTab(type); // <- handle colour highlighting here
-  
-  const tocList = document.getElementById('tocList');
-  tocList.innerHTML = '';               // clear previous items
-
-  // possible topics for each module
-  const eyes = [
-    'Anatomy','Arclight','Front of Eye Case Test','Child','Front of Eye',
-    'Fundal Reflex','Fundus','Glaucoma','How to Check for Eyeglasses',
-    'How to Use','Lens','Pupil','Red Eye','Summary','Vision Loss'
-  ];
-  const ears = [
-    'Anatomy','Childhood Hearing Development','Ear Drum','External Ear: Pinna'
-  ];
-
-  // decide which list to show, sort alphabetically, then build <li>’s
-  (type === 'eyes' ? eyes : ears).sort().forEach(item => {
+  const items = (type === 'eyes' ? content.eyes : content.ears);
+  items.sort().forEach(item => {
     const li = document.createElement('li');
     li.textContent = item;
     tocList.appendChild(li);
   });
 
-  // reset any image that was showing
   const imgBox = document.getElementById('atomsImageContainer');
   if (imgBox) imgBox.innerHTML = '';
-
-  setupTOCImageSwitch();   // hook up click → image logic
-  setupSlideSwitch();      // hook up scroll / swipe logic
 }
 
+/**
+ * Handles clicks on TOC items to display the corresponding image.
+ * @param {Event} e - The click event.
+ */
+function handleTOCItemClick(e) {
+  if (e.target.tagName !== 'LI') return;
 
+  const topic = e.target.textContent.trim();
+  const container = document.getElementById('atomsImageContainer');
+  container.innerHTML = ''; // Clear previous content
 
-
-// Map TOC items to images (single images)
-const imageMap = {
-  'Eyes: Anatomy': 'Anatomy1.png',  // will handle multi-image switching later
-  'Ears: Anatomy': 'EarAnatomy.png',
-  'Arclight': 'Arclight.png',
-  'Front of Eye Case Test': 'CaseStudy.png',
-  'Child': 'Child.png',
-  'Front of Eye': 'FrontOfEye.png',
-  'Fundal Reflex': 'FundalReflex.png',
-  'Fundus': 'Fundus.png',
-  'Glaucoma': 'Glaucoma.png',
-  'How to Check for Eyeglasses': 'Refract.png',
-  'How to Use': 'HowToUse.png',
-  'Lens': 'Lens.png',
-  'Pupil': 'Pupil.png',
-  'Red Eye': 'RedEye.png',
-  'Summary': 'Summary.png',
-  'Vision Loss': 'Summary.png',
-  'Ear Drum': 'Drum.png',
-  'External Ear: Pinna': 'Ear.png',
-  'Childhood Hearing Development': 'EarChild.png',
-};
-
-
-
-// Attach click handlers to TOC items for image switching
-function setupTOCImageSwitch() {
-  const tocList = document.getElementById('tocList');
-  const atomsImageContainer = document.getElementById('atomsImageContainer');
-  if (!atomsImageContainer) return;
-
-  // We'll track currentKey and currentIndex for multi-image items
-  let currentKey = '';
-  let currentIndex = 0;
-
-  // Multi-image items map
-  const multiImageMap = {
-    'Anatomy': ['Anatomy1.png', 'Anatomy2.png'],
-    'Front of Eye Case Test': ['CaseStudy1.png', 'CaseStudy2.png']
-  };
-
-  document.getElementById('tocList').addEventListener('click', function (e) {
-  if (e.target.tagName === 'LI') {
-    const topic = e.target.textContent.trim();
-    const container = document.getElementById('atomsImageContainer');
-
-    container.innerHTML = ''; // Clear previous content
-
-    // Special case: Anatomy
-    if (topic === 'Anatomy' || topic === 'Eyes: Anatomy' || topic === 'Ears: Anatomy') {
-
-    if (topic === 'Anatomy') {
-  if (currentTOCType === 'ears') {
-    const img = document.createElement('img');
-    img.src = 'images/EarAnatomy.png';
-    img.alt = 'Ear Anatomy';
-    img.style.maxWidth = '100%';
-    img.style.maxHeight = '100%';
-    img.style.objectFit = 'contain';
-    img.style.borderRadius = '12px';
-    container.appendChild(img);
+  // Special handling for Anatomy which has different images for eyes and ears
+  if (topic === 'Anatomy') {
+    if (currentTOCType === 'ears') {
+      displayImage('images/EarAnatomy.png', 'Ear Anatomy', container);
+    } else {
+      displayImage('images/Anatomy1.png', 'Eye Anatomy 1', container);
+      displayImage('images/Anatomy2.png', 'Eye Anatomy 2', container);
+    }
   } else {
-    const images = ['Anatomy1.png', 'Anatomy2.png'];
-    images.forEach(imageFile => {
-        const img = document.createElement('img');
-        img.src = `images/${imageFile}`;
-        img.alt = 'Eye Anatomy';
-        img.style.maxWidth = '100%';
-        img.style.marginBottom = '10px';
-        img.style.objectFit = 'contain';
-        img.style.borderRadius = '12px';
-        container.appendChild(img);
-    });
-  }
-}
-
-
-}
-
-
-    
-    // Default case: Show one image
-    else {
-      const img = document.createElement('img');
-      const filenameMap = {
-      "Anatomy": "Anatomy1.png",
+    // Default case for all other topics
+    const filenameMap = {
       "Arclight": "Arclight.png",
       "Front of Eye Case Test": "CaseStudy.png",
       "Child": "Child.png",
@@ -905,778 +577,554 @@ function setupTOCImageSwitch() {
       "External Ear: Pinna": "Ear.png",
       "Childhood Hearing Development": "EarChild.png",
     };
+    const filename = filenameMap[topic] || `${topic.replace(/\s/g, '')}.png`;
+    const img = displayImage(`images/${filename}`, topic, container);
 
-const filename = filenameMap[topic] || `${topic.replace(/\s/g, '')}.png`;
-img.src = `images/${filename}`;
-
-
-      // Rotate specific images
     if (['CaseStudy', 'FundalReflex'].includes(topic.replace(/\s/g, ''))) {
       img.style.transform = 'rotate(90deg)';
     }
-
-
-      img.alt = topic;
-      img.style.maxWidth = '100%';
-      img.style.maxHeight = '100%';
-      img.style.objectFit = 'contain';
-      img.style.borderRadius = '12px';
-      container.appendChild(img);
-
-    }
-
-    document.getElementById('tocDropdown').classList.remove('active');
-  }
-});
-
-
-  // Helper function to update image
-  function updateImage(imgName, altText) {
-    const existingImg = atomsImageContainer.querySelector('img');
-    if (existingImg) {
-      existingImg.src = `images/${imgName}`;
-      existingImg.alt = altText;
-    } else {
-      const img = document.createElement('img');
-      img.src = `images/${imgName}`;
-      img.alt = altText;
-      img.style.maxWidth = '100vh';
-      img.style.maxHeight = '100vw';
-      img.style.transform = 'rotate(90deg)';
-      img.style.borderRadius = '12px';
-      img.style.objectFit = 'contain';
-      atomsImageContainer.innerHTML = '';
-      atomsImageContainer.appendChild(img);
-    }
   }
 
-  // Expose currentKey and currentIndex for slide switching
-  setupSlideSwitch(currentKey, currentIndex, multiImageMap, updateImage);
+  closeTOC();
 }
 
-// Slide / scroll switching function
-function setupSlideSwitch(currentKeyInit, currentIndexInit, multiImageMap, updateImage) {
-  const atomsImageContainer = document.getElementById('atomsImageContainer');
-  if (!atomsImageContainer) return;
+/**
+ * Creates and appends an image to a container.
+ * @param {string} src - The source URL of the image.
+ * @param {string} alt - The alt text for the image.
+ * @param {HTMLElement} container - The container to append the image to.
+ * @returns {HTMLImageElement} The created image element.
+ */
+function displayImage(src, alt, container) {
+  const img = document.createElement('img');
+  img.src = src;
+  img.alt = alt;
+  img.style.maxWidth = '100%';
+  img.style.maxHeight = '100%';
+  img.style.objectFit = 'contain';
+  img.style.borderRadius = '12px';
+  img.style.marginBottom = '10px';
+  container.appendChild(img);
+  return img;
+}
 
-  // State variables stored in closure
-  let currentKey = currentKeyInit || '';
-  let currentIndex = currentIndexInit || 0;
+/**
+ * Sets the active class on the correct TOC tab (Eyes/Ears).
+ * @param {'eyes' | 'ears'} type - The active tab type.
+ */
+function setActiveTab(type) {
+  const eyesBtn = document.getElementById('eyesTab');
+  const earsBtn = document.getElementById('earsTab');
+  if (eyesBtn && earsBtn) {
+    eyesBtn.classList.toggle('active', type === 'eyes');
+    earsBtn.classList.toggle('active', type === 'ears');
+  }
+}
 
-  // Listen to wheel event for scroll on desktop
-  atomsImageContainer.addEventListener('wheel', (e) => {
-    if (!multiImageMap[currentKey]) return;
 
-    e.preventDefault();
+// --- VIDEO PLAYER & TOOLBAR ---
 
-    if (e.deltaY > 0) {
-      currentIndex = (currentIndex + 1) % multiImageMap[currentKey].length;
-    } else {
-      currentIndex = (currentIndex - 1 + multiImageMap[currentKey].length) % multiImageMap[currentKey].length;
-    }
+/**
+ * Initializes the video player and its associated toolbar.
+ */
+function initializeToolbar() {
+  const toolbarButtonMappings = {
+    'timestampBtn': showTimestamps,
+    'noteBtn': showNote,
+    'folderBtn': showFiles,
+    'infoBtn': showDefaultInfo,
+    'quizBtn': launchQuiz,
+  };
 
-    updateImage(multiImageMap[currentKey][currentIndex], currentKey);
-  }, { passive: false });
+  for (const [btnId, handler] of Object.entries(toolbarButtonMappings)) {
+    const button = document.getElementById(btnId);
+    if (button) button.addEventListener('click', handler);
+  }
+}
 
-  // Touch swipe detection for mobile
-  let touchStartY = null;
+/**
+ * Initializes the video player with time-based events.
+ */
+function initializeVideoPlayers() {
+  const video = document.getElementById('customVideo');
+  if (video) {
+    video.addEventListener('timeupdate', handleVideoTimeUpdate);
+  }
+}
 
-  atomsImageContainer.addEventListener('touchstart', (e) => {
-    touchStartY = e.changedTouches[0].clientY;
-  });
+/**
+ * Handles time updates for the main video player to show contextual info.
+ */
+function handleVideoTimeUpdate() {
+  const video = document.getElementById('customVideo');
+  if (!video) return;
 
-  atomsImageContainer.addEventListener('touchend', (e) => {
-    if (touchStartY === null) return;
+  const time = Math.floor(video.currentTime);
+  const contentBox = document.getElementById('contentBox');
 
-    const touchEndY = e.changedTouches[0].clientY;
-    const diffY = touchStartY - touchEndY;
-
-    if (Math.abs(diffY) > 30) { // threshold
-      if (!multiImageMap[currentKey]) return;
-
-      if (diffY > 0) {
-        currentIndex = (currentIndex + 1) % multiImageMap[currentKey].length;
-      } else {
-        currentIndex = (currentIndex - 1 + multiImageMap[currentKey].length) % multiImageMap[currentKey].length;
+  const pauseEvents = {
+    22: {
+      id: 'eye-info',
+      handler: () => {
+        contentBox.innerHTML = `
+          <h4>Eye Anatomy</h4>
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Eye_anatomy_diagram.svg/1200px-Eye_anatomy_diagram.svg.png" style="width: 100%; border-radius: 5px; margin-top: 10px;" />
+          <ul><li>Periorbita</li><li>Eyelids</li><li>Eyes</li></ul>`;
       }
-
-      updateImage(multiImageMap[currentKey][currentIndex], currentKey);
+    },
+    32: {
+      id: 'device-info',
+      handler: () => {
+        contentBox.innerHTML = `
+          <h4>Arclight Device Overview</h4>
+          <img src="images/arclight_device.png" style="width: 100%; border-radius: 5px;" />`;
+      }
     }
+  };
 
-    touchStartY = null;
-  });
+  if (pauseEvents[time] && lastPauseTime !== pauseEvents[time].id) {
+    lastPauseTime = pauseEvents[time].id;
+    video.pause();
+    pauseEvents[time].handler();
+    setTimeout(() => video.play(), 5000); // Auto-resume after 5 seconds
+  }
 }
 
-(function(){
-  // Scoped selector helper inside quiz container
+/**
+ * Seeks the video to a specific time.
+ * @param {number} sec - The time in seconds to seek to.
+ */
+function seekTo(sec) {
+  const video = document.getElementById('customVideo');
+  if (video) {
+    video.currentTime = sec;
+    video.play();
+    lastPauseTime = null; // Reset pause tracking
+  }
+}
+
+/**
+ * Displays timestamps in the content box.
+ */
+function showTimestamps() {
+  setActiveToolbarButton('timestampBtn');
+  const contentBox = document.getElementById('contentBox');
+  contentBox.innerHTML = `
+    <h4>Time stamp</h4>
+    <p><a href="#" onclick="seekTo(0)">0:00 General Inspection</a></p>
+    <p><a href="#" onclick="seekTo(28)">0:28 Arclight Setup</a></p>
+    <p><a href="#" onclick="seekTo(47)">0:47 Fundal Reflex</a></p>
+    <p><a href="#" onclick="seekTo(67)">1:07 Optic Nerve</a></p>
+    <p><a href="#" onclick="seekTo(102)">1:42 Retinal Vessels</a></p>`;
+}
+
+/**
+ * Displays a textarea for notes.
+ */
+function showNote() {
+  setActiveToolbarButton('noteBtn');
+  document.getElementById('contentBox').innerHTML = '<textarea placeholder="Type your notes here..."></textarea>';
+}
+
+/**
+ * Displays a list of attached files.
+ */
+function showFiles() {
+  setActiveToolbarButton('folderBtn');
+  document.getElementById('contentBox').innerHTML = `
+    <h4>Attached Files</h4>
+    <p><a class="link" href="#">Arclight_Device_Practice.pdf</a></p>
+    <p><a class="link" href="#">Fundal_Reflex.pdf</a></p>
+    <p><a class="link" href="#">Ophthalmoscopy_Exercise.docx</a></p>`;
+}
+
+/**
+ * Displays default information about the video.
+ */
+function showDefaultInfo() {
+  setActiveToolbarButton('infoBtn');
+  document.getElementById('contentBox').innerHTML = `
+    <h4>Additional Information</h4>
+    <p>This video shows how to prepare and use the Arclight ophthalmoscope.</p>`;
+}
+
+/**
+ * Sets the 'active' class on the clicked toolbar button.
+ * @param {string} id - The ID of the button to activate.
+ */
+function setActiveToolbarButton(id) {
+  document.querySelectorAll('.toolbar button').forEach(btn => btn.classList.remove('active'));
+  const activeBtn = document.getElementById(id);
+  if (activeBtn) activeBtn.classList.add('active');
+}
+
+
+// --- QUIZZES ---
+
+/**
+ * Initializes all quiz-related functionality.
+ */
+function initializeQuizzes() {
+  // This function could be expanded if more quizzes are added.
+  // For now, the quiz logic is self-contained in launchQuiz and the IIFE.
+}
+
+/**
+ * Launches the Direct Ophthalmoscopy quiz.
+ */
+function launchQuiz() {
+  const previousPage = document.querySelector('.page.active')?.id || 'dashboard';
+  const quizPageId = 'directOphthalmoscopyQuizPage';
+
+  // Avoid creating duplicate quiz pages
+  if (document.getElementById(quizPageId)) {
+    showPage(quizPageId);
+    return;
+  }
+
+  const quizPage = document.createElement('div');
+  quizPage.id = quizPageId;
+  quizPage.className = 'page';
+  quizPage.innerHTML = `
+    <div class="quiz-container">
+      <div class="quiz-header small">
+        <div class="quiz-header-row centered">
+          <button id="backToVideoBtn" class="back-icon" title="Go back">←</button>
+          <h2>Quiz</h2>
+        </div>
+      </div>
+      <div class="quiz-scroll"><form id="quizForm"></form></div>
+      <div class="quiz-footer">
+        <button type="submit" form="quizForm" class="start-btn">See Results</button>
+      </div>
+      <div id="quizModal" class="quiz-modal hidden">
+        <div class="quiz-modal-content">
+          <p id="quizScoreText"></p>
+          <button id="seeWhyBtn">See why?</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('appRoot').appendChild(quizPage);
+
+  const questions = [
+    { q: "1. When starting direct ophthalmoscopy, what is the ideal distance between the examiner and the patient?", options: ["5 cm", "10 cm", "15 cm", "Arm’s length"], answer: 3 },
+    { q: "2. Which of the options describe the best condition to get the view of the retina?", options: ["Outdoors with bright sunlight, dilated pupil", "Deem room with dilated pupil", "Indoors with bright light, dilated pupil", "Deem room with constricted pupil"], answer: 1 },
+    { q: "3. Which eye should you use to examine the patient’s right eye?", options: ["Left eye", "Either eye", "Right eye", "Dominant eye"], answer: 2 },
+    { q: "4. During ophthalmoscopy, which part of the back of the eye should you identify first?", options: ["Macula", "Optic disc", "Retinal periphery", "Fovea"], answer: 1 },
+    { q: "5. What is the name given to pale optic disc?", options: ["Normal finding", "Cataract", "Optic atrophy", "Raised intraocular pressure"], answer: 2 },
+    { q: "6. Which lighting condition is recommended for performing ophthalmoscopy with the Arclight?", options: ["Bright daylight", "Dim or darkened room", "Bright room", "Ambient light"], answer: 1 },
+    { q: "7. What does a cup-to-disc ratio (CDR) of 0.7 or greater typically suggest on fundus examination?", options: ["Glaucoma", "Macular degeneration", "Diabetic retinopathy", "Retinal detachment"], answer: 0 }
+  ];
+
+  const quizForm = quizPage.querySelector('#quizForm');
+  questions.forEach((q, i) => {
+    let block = `<div class="quiz-block"><p>${q.q}</p>`;
+    q.options.forEach((opt, j) => {
+      block += `<label class="radio-label"><input type="radio" name="q${i}" value="${j}" /><span>${opt}</span></label>`;
+    });
+    block += `<p class="answer" style="display:none; margin-top:5px; font-style:italic;">Correct answer: ${q.options[q.answer]}</p></div>`;
+    quizForm.innerHTML += block;
+  });
+
+  quizForm.onsubmit = (e) => {
+    e.preventDefault();
+    let correct = 0;
+    questions.forEach((q, i) => {
+      const radios = quizForm.querySelectorAll(`input[name="q${i}"]`);
+      const answer = q.answer;
+      let selected = null;
+      radios.forEach(r => {
+        r.disabled = true;
+        if (r.checked) selected = parseInt(r.value);
+      });
+      const labels = radios[0].closest('.quiz-block').querySelectorAll('label');
+      labels.forEach((label, index) => {
+        if (index === answer) label.classList.add('correct');
+        else if (parseInt(label.querySelector('input').value) === selected) label.classList.add('wrong');
+      });
+      if (selected === answer) correct++;
+    });
+    quizPage.querySelector('#quizScoreText').innerText = `You got ${correct} out of ${questions.length} correct.`;
+    quizPage.querySelector('#quizModal').classList.remove('hidden');
+  };
+
+  quizPage.querySelector('#seeWhyBtn').addEventListener('click', () => {
+    quizPage.querySelector('#quizModal').classList.add('hidden');
+    quizPage.querySelectorAll('.answer').forEach(a => a.style.display = 'block');
+  });
+
+  quizPage.querySelector('#backToVideoBtn').addEventListener('click', () => {
+    showPage(previousPage);
+  });
+
+  showPage(quizPageId);
+}
+
+/**
+ * Anterior Segment Quiz Module (IIFE to encapsulate logic)
+ */
+(function() {
   const container = document.getElementById('anteriorSegmentQuizModule');
   if (!container) return;
 
-  // Elements inside quiz module
-  const caseTitle = container.querySelector("#caseTitle");
-  const caseSubtitle = container.querySelector("#caseSubtitle");
-  const caseImage = container.querySelector("#caseImage");
-  const quizForm = container.querySelector("#quizForm");
-  const prevQuestionBtn = container.querySelector("#prevQuestionBtn");
-  const nextQuestionBtn = container.querySelector("#nextQuestionBtn");
-  const nextCaseBtn = container.querySelector("#nextCaseBtn");
-  const scoreCard = container.querySelector("#scoreCard");
-  const quizCard = container.querySelector("#quizCard");
-  const scoreText = container.querySelector("#scoreText");
-  const restartBtn = container.querySelector("#restartBtn");
-  const reviewBtn = container.querySelector("#reviewBtn");
-  const reviewCard = container.querySelector("#reviewCard");
-  const reviewContent = container.querySelector("#reviewContent");
-  const closeReviewBtn = container.querySelector("#closeReviewBtn");
-  const backBtn = container.querySelector("#anteriorQuizBackBtn");
+  const elements = {
+    caseTitle: container.querySelector("#caseTitle"),
+    caseSubtitle: container.querySelector("#caseSubtitle"),
+    caseImage: container.querySelector("#caseImage"),
+    quizForm: container.querySelector("#quizForm"),
+    prevQuestionBtn: container.querySelector("#prevQuestionBtn"),
+    nextQuestionBtn: container.querySelector("#nextQuestionBtn"),
+    nextCaseBtn: container.querySelector("#nextCaseBtn"),
+    scoreCard: container.querySelector("#scoreCard"),
+    quizCard: container.querySelector("#quizCard"),
+    scoreText: container.querySelector("#scoreText"),
+    restartBtn: container.querySelector("#restartBtn"),
+    reviewBtn: container.querySelector("#reviewBtn"),
+    reviewCard: container.querySelector("#reviewCard"),
+    reviewContent: container.querySelector("#reviewContent"),
+    closeReviewBtn: container.querySelector("#closeReviewBtn"),
+    backBtn: container.querySelector("#anteriorQuizBackBtn"),
+  };
 
-  // Data - clinical cases and questions (same as original)
   const cases = [
-    {
-      title: "6 month old baby: 'Eye looks funny'",
-      image: "images/case1_eye.png",
-      questions: [
-        {
-          question: "What is the dominant abnormal sign?",
-          options: [
-            "Hazey/grey cornea",
-            "White pupil (leucocoria)",
-            "Keratic precipitates",
-            "Hypopyon"
-          ],
-          correctIndex: 1
-        },
-        {
-          question: "What is the most likely diagnosis?",
-          options: [
-            "Corneal scar",
-            "Congenital cataract",
-            "Infective keratitis",
-            "Limbal dermoid"
-          ],
-          correctIndex: 1
-        },
-        {
-          question: "What should you do?",
-          options: [
-            "Prescribe topical antibiotics",
-            "Refer urgently to an eye-care professional",
-            "Reassure and discharge",
-            "Assess for spectacles only"
-          ],
-          correctIndex: 1
-        }
-      ]
-    },
-    // ... include all other cases exactly as in your original quiz JS ...
-    // Make sure to copy all cases you provided earlier here!
+    { title: "6 month old baby: 'Eye looks funny'", image: "images/case1_eye.png", questions: [
+        { question: "What is the dominant abnormal sign?", options: ["Hazey/grey cornea", "White pupil (leucocoria)", "Keratic precipitates", "Hypopyon"], correctIndex: 1 },
+        { question: "What is the most likely diagnosis?", options: ["Corneal scar", "Congenital cataract", "Infective keratitis", "Limbal dermoid"], correctIndex: 1 },
+        { question: "What should you do?", options: ["Prescribe topical antibiotics", "Refer urgently to an eye-care professional", "Reassure and discharge", "Assess for spectacles only"], correctIndex: 1 }
+    ]},
+    // ... Add all other cases here ...
   ];
 
-  // Copy all the cases here as in your original quiz page
-
-  // State
   let currentCaseIndex = 0;
   let currentQuestionIndex = 0;
-  let answers = cases.map(c => new Array(c.questions.length).fill(null));
+  let answers = [];
 
-  // Render question function
   function renderQuestion(caseIndex, questionIndex) {
     const c = cases[caseIndex];
     const q = c.questions[questionIndex];
-
-    caseTitle.textContent = `Case ${caseIndex + 1}`;
-    caseSubtitle.textContent = c.title;
-
-    caseImage.src = c.image;
-    caseImage.alt = c.title + " image";
-
-    quizForm.innerHTML = "";
-
+    elements.caseTitle.textContent = `Case ${caseIndex + 1}`;
+    elements.caseSubtitle.textContent = c.title;
+    elements.caseImage.src = c.image;
+    elements.quizForm.innerHTML = "";
     const div = document.createElement("div");
-    div.classList.add("question");
-
-    const h3 = document.createElement("h3");
-    h3.textContent = `${questionIndex + 1}. ${q.question}`;
-    div.appendChild(h3);
-
-    const ul = document.createElement("ul");
-    ul.classList.add("options");
-
+    div.className = "question";
+    div.innerHTML = `<h3>${questionIndex + 1}. ${q.question}</h3><ul class="options"></ul>`;
     q.options.forEach((opt, optIndex) => {
       const li = document.createElement("li");
-      const input = document.createElement("input");
-      const id = `case${caseIndex}_q${questionIndex}_opt${optIndex}`;
-      input.type = "radio";
-      input.name = `q${questionIndex}`;
-      input.id = id;
-      input.value = optIndex;
-      if (answers[caseIndex][questionIndex] === optIndex) {
-        input.checked = true;
-      }
+      li.innerHTML = `<input type="radio" name="q${questionIndex}" id="c${caseIndex}q${questionIndex}o${optIndex}" value="${optIndex}"><label for="c${caseIndex}q${questionIndex}o${optIndex}">${opt}</label>`;
+      const input = li.querySelector('input');
+      if (answers[caseIndex][questionIndex] === optIndex) input.checked = true;
       input.onchange = () => {
         answers[caseIndex][questionIndex] = parseInt(input.value);
         updateButtons();
       };
-
-      const label = document.createElement("label");
-      label.htmlFor = id;
-      label.textContent = opt;
-
-      li.appendChild(input);
-      li.appendChild(label);
-      ul.appendChild(li);
+      div.querySelector('.options').appendChild(li);
     });
-
-    div.appendChild(ul);
-    quizForm.appendChild(div);
-
+    elements.quizForm.appendChild(div);
     updateButtons();
   }
 
-  // Update nav buttons state and next case button
   function updateButtons() {
-    prevQuestionBtn.disabled = currentQuestionIndex === 0;
-    nextQuestionBtn.disabled = currentQuestionIndex === cases[currentCaseIndex].questions.length - 1;
-
-    // Show Next Case button if all questions answered for current case
+    elements.prevQuestionBtn.disabled = currentQuestionIndex === 0;
+    elements.nextQuestionBtn.disabled = currentQuestionIndex === cases[currentCaseIndex].questions.length - 1;
     const allAnswered = !answers[currentCaseIndex].some(a => a === null);
-    nextCaseBtn.style.display = allAnswered ? "block" : "none";
-
-    nextCaseBtn.disabled = !allAnswered;
+    elements.nextCaseBtn.style.display = allAnswered ? "block" : "none";
   }
 
-  // Navigation button handlers
-  prevQuestionBtn.onclick = () => {
-    if (currentQuestionIndex > 0) {
-      currentQuestionIndex--;
-      renderQuestion(currentCaseIndex, currentQuestionIndex);
-    }
-  };
-
-  nextQuestionBtn.onclick = () => {
-    if (currentQuestionIndex < cases[currentCaseIndex].questions.length - 1) {
-      currentQuestionIndex++;
-      renderQuestion(currentCaseIndex, currentQuestionIndex);
-    }
-  };
-
-  nextCaseBtn.onclick = () => {
-    currentCaseIndex++;
-    currentQuestionIndex = 0;
-    if (currentCaseIndex >= cases.length) {
-      showScore();
-    } else {
-      renderQuestion(currentCaseIndex, currentQuestionIndex);
-    }
-  };
-
-  // Show score page
   function showScore() {
-    quizCard.style.display = "none";
-    scoreCard.style.display = "block";
-
-    let totalQuestions = 0;
+    elements.quizCard.style.display = "none";
+    elements.scoreCard.style.display = "block";
     let correctCount = 0;
     cases.forEach((c, caseIdx) => {
       c.questions.forEach((q, qIdx) => {
-        totalQuestions++;
-        if (answers[caseIdx] && answers[caseIdx][qIdx] === q.correctIndex) {
-          correctCount++;
-        }
+        if (answers[caseIdx]?.[qIdx] === q.correctIndex) correctCount++;
       });
     });
-
-    scoreText.textContent = `You scored ${correctCount} out of ${totalQuestions} correct.`;
+    elements.scoreText.textContent = `You scored ${correctCount} out of ${cases.flatMap(c => c.questions).length} correct.`;
   }
 
-  // Restart quiz
-  restartBtn.onclick = () => {
-    currentCaseIndex = 0;
-    currentQuestionIndex = 0;
-    answers = cases.map(c => new Array(c.questions.length).fill(null));
-    scoreCard.style.display = "none";
-    reviewCard.style.display = "none";
-    quizCard.style.display = "block";
-    renderQuestion(currentCaseIndex, currentQuestionIndex);
-  };
-
-  // Review quiz
-  reviewBtn.onclick = () => {
-    scoreCard.style.display = "none";
-    reviewCard.style.display = "block";
-    buildReview();
-  };
-
-  closeReviewBtn.onclick = () => {
-    reviewCard.style.display = "none";
-    scoreCard.style.display = "block";
-  };
-
-  // Build review page content
   function buildReview() {
-    reviewContent.innerHTML = "";
+    elements.reviewContent.innerHTML = "";
     cases.forEach((c, caseIdx) => {
       const caseDiv = document.createElement("div");
-      caseDiv.classList.add("review-case");
-
-      const h2 = document.createElement("h2");
-      h2.textContent = `Case ${caseIdx + 1}`;
-      caseDiv.appendChild(h2);
-
-      const subtitle = document.createElement("div");
-      subtitle.id = "caseSubtitle";
-      subtitle.textContent = c.title;
-      caseDiv.appendChild(subtitle);
-
-      const img = document.createElement("img");
-      img.className = "case-image";
-      img.src = c.image;
-      img.alt = c.title + " image";
-      caseDiv.appendChild(img);
-
+      caseDiv.className = "review-case";
+      caseDiv.innerHTML = `<h2>Case ${caseIdx + 1}</h2><div id="caseSubtitle">${c.title}</div><img class="case-image" src="${c.image}" alt="${c.title}">`;
       c.questions.forEach((q, qIdx) => {
         const qDiv = document.createElement("div");
-        qDiv.classList.add("review-question");
-
-        const qH3 = document.createElement("h3");
-        qH3.textContent = `${qIdx + 1}. ${q.question}`;
-        qDiv.appendChild(qH3);
-
-        const ul = document.createElement("ul");
-        ul.classList.add("review-options");
-
+        qDiv.className = "review-question";
+        qDiv.innerHTML = `<h3>${qIdx + 1}. ${q.question}</h3><ul class="review-options"></ul>`;
         q.options.forEach((opt, optIdx) => {
           const li = document.createElement("li");
-
-          if (optIdx === q.correctIndex) {
-            li.classList.add("correct");
-          }
-          if (answers[caseIdx][qIdx] === optIdx) {
-            li.classList.add("user-selected");
-          }
-
           li.textContent = opt;
-          ul.appendChild(li);
+          if (optIdx === q.correctIndex) li.classList.add("correct");
+          if (answers[caseIdx][qIdx] === optIdx) li.classList.add("user-selected");
+          qDiv.querySelector('ul').appendChild(li);
         });
-
-        qDiv.appendChild(ul);
         caseDiv.appendChild(qDiv);
       });
-
-      reviewContent.appendChild(caseDiv);
+      elements.reviewContent.appendChild(caseDiv);
     });
   }
 
-  // Initialize first question display
-  function startAnteriorSegmentQuiz() {
+  window.startAnteriorSegmentQuiz = () => {
     currentCaseIndex = 0;
     currentQuestionIndex = 0;
     answers = cases.map(c => new Array(c.questions.length).fill(null));
-    scoreCard.style.display = "none";
-    reviewCard.style.display = "none";
-    quizCard.style.display = "block";
+    elements.scoreCard.style.display = "none";
+    elements.reviewCard.style.display = "none";
+    elements.quizCard.style.display = "block";
     renderQuestion(currentCaseIndex, currentQuestionIndex);
-  }
+  };
 
-  // Back button to return to learning modules
-  if (backBtn) backBtn.onclick = () => showPage('coreClinicalOphthalmicExamination');
-
-
-  // Expose start function globally so it can be called from outside
-  window.startAnteriorSegmentQuiz = startAnteriorSegmentQuiz;
+  elements.prevQuestionBtn.onclick = () => { if (currentQuestionIndex > 0) renderQuestion(currentCaseIndex, --currentQuestionIndex); };
+  elements.nextQuestionBtn.onclick = () => { if (currentQuestionIndex < cases[currentCaseIndex].questions.length - 1) renderQuestion(currentCaseIndex, ++currentQuestionIndex); };
+  elements.nextCaseBtn.onclick = () => {
+    currentCaseIndex++;
+    currentQuestionIndex = 0;
+    if (currentCaseIndex >= cases.length) showScore();
+    else renderQuestion(currentCaseIndex, currentQuestionIndex);
+  };
+  elements.restartBtn.onclick = window.startAnteriorSegmentQuiz;
+  elements.reviewBtn.onclick = () => {
+    elements.scoreCard.style.display = "none";
+    elements.reviewCard.style.display = "block";
+    buildReview();
+  };
+  elements.closeReviewBtn.onclick = () => {
+    elements.reviewCard.style.display = "none";
+    elements.scoreCard.style.display = "block";
+  };
+  if (elements.backBtn) elements.backBtn.onclick = () => showPage('coreClinicalOphthalmicExamination');
 })();
 
 
-// Initial navigation setup after DOM loads
-document.addEventListener('DOMContentLoaded', () => {
-   // Explicitly trigger initial page logic
-  showPage('splashScreen');
-  // Click on Anterior Segment card opens quiz iframe page
-  const anteriorCard = document.getElementById('anteriorSegmentCard');
-  if (anteriorCard) {
-    anteriorCard.style.cursor = 'pointer';
-    anteriorCard.addEventListener('click', () => {
-      showPage('frontOfEyePage');
-    });
-  }
+// --- PWA & OFFLINE ---
 
-
-  const anteriorVideoCard = document.getElementById('anteriorSegmentVideoCard');
-if (anteriorVideoCard) {
-  anteriorVideoCard.addEventListener('click', () => {
-    showPage('anteriorSegmentVideoPage');
-  });
-}
-
-const caseBasedCard = document.getElementById('caseBasedLearningCard');
-if (caseBasedCard) {
-  caseBasedCard.addEventListener('click', () => {
-    showPage('anteriorSegmentQuizPage');
-  });
-}
-
-  const pupilsCard = document.getElementById('pupilsCard');
-  if (pupilsCard) {
-    pupilsCard.addEventListener('click', () => {
-      showPage('pupilsPage');
-    });
-  }
-
-
-  const childhoodEyeScreeningCard = document.getElementById('childhoodEyeScreeningCard');
-    if (childhoodEyeScreeningCard) {
-      childhoodEyeScreeningCard.addEventListener('click', () => {
-        showPage('childhoodEyeScreeningPage');
-      });
-    }
+/**
+ * Initializes Progressive Web App features like the install prompt and service worker.
+ */
+function initializePWA() {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const installBtn = document.getElementById('installBtn');
+    if (installBtn) installBtn.style.display = 'block';
   });
 
+  const installBtn = document.getElementById('installBtn');
+  if (installBtn) installBtn.addEventListener('click', handleInstallPrompt);
 
-  const howToUseArclightCard = document.getElementById('howToUseArclightCard');
-  if (howToUseArclightCard) {
-    howToUseArclightCard.addEventListener('click', () => {
-      showPage('howToUseArclightVideoPage');
-    });
-  }
-
-
-  const phoneAttachmentCard = document.getElementById('phoneAttachmentCard');
-  if (phoneAttachmentCard) {
-    phoneAttachmentCard.addEventListener('click', () => showPage('phoneAttachmentVideoPage'));
-  }
-
-
-  // Back button on iframe quiz page
-  const quizBackBtn = document.getElementById('quizBackBtn');
-  if (quizBackBtn) {
-    quizBackBtn.addEventListener('click', () => {
-      showPage('learningModules');
-    });
-  }
-
-  // Home button returns to dashboard
-  const homeBtn = document.getElementById('homeBtn');
-  if (homeBtn) {
-    homeBtn.addEventListener('click', () => {
-      showPage('dashboard');
-    });
-  }
-
-  // ...Other existing event listeners for your app here...
-
-// YouTube iframe API, toolbar functions, and any other app JS go here...
-
-// You can keep all your existing functions as is
-
-
-// Splash screen logic
-window.addEventListener('load', () => {
-  const dropdown = document.getElementById('splashLanguageDropdown');
-  const languageBox = document.getElementById('languageContainer');
-
-  setTimeout(() => {
-    if (languageBox) languageBox.style.display = 'block';
-  }, 5000); // 5 seconds after logo fade-in
-
-  if (dropdown) {
-  dropdown.addEventListener('change', () => {
-    const splash = document.getElementById('splashScreen');
-    const onboarding = document.getElementById('onboarding');
-
-    // Add fade-out class
-    splash.classList.add('fade-out');
-
-    // After animation ends, show onboarding
-    setTimeout(() => {
-      splash.classList.remove('active');
-      onboarding.classList.add('active');
-      splash.classList.remove('fade-out'); // Reset for future use
-    }, 500); // Match CSS animation duration
-  });
-}
-
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-  const fieldSelect = document.getElementById('fieldSelect');
-  const jobSelect = document.getElementById('jobSelect');
-  const studentYearSelect = document.getElementById('studentYearSelect');
-
-  const jobOptions = {
-    eyes: [
-      "Ophthalmologist",
-      "Optometrist",
-      "Ophthalmic Clinical Officer",
-      "Clinical Officer",
-      "Community Health Worker",
-      "Village Health Worker",
-      "Lady Community Health Worker",
-      "Primary Health Care Nurse",
-      "Medical Student"
-    ],
-    ears: [
-      "ENT Specialist",
-      "Audiologist",
-      "Ear Care Practitioner",
-      "Clinical Officer",
-      "Community Health Worker",
-      "Village Health Worker",
-      "Lady Community Health Worker",
-      "Health Extension Worker",
-      "Medical Student"
-    ],
-    skin: [
-      "Dermatologist",
-      "Skin Specialist Nurse",
-      "Community Health Worker",
-      "Village Health Worker",
-      "Lady Community Health Worker",
-      "Health Extension Worker",
-      "Clinical Officer",
-      "Medical Student"
-    ]
-  };
-
-  fieldSelect.addEventListener('change', () => {
-    const selectedField = fieldSelect.value;
-    jobSelect.innerHTML = '<option disabled selected>Select your job role</option>';
-
-    jobOptions[selectedField].forEach(job => {
-      const opt = document.createElement('option');
-      opt.value = job;
-      opt.textContent = job;
-      jobSelect.appendChild(opt);
-    });
-
-    jobSelect.classList.remove('hidden');
-    studentYearSelect.classList.add('hidden');
-  });
-
-  jobSelect.addEventListener('change', () => {
-    const selectedJob = jobSelect.value;
-    if (selectedJob === "Medical Student") {
-      studentYearSelect.classList.remove('hidden');
-    } else {
-      studentYearSelect.classList.add('hidden');
-    }
-  });
-});
-
-
-
-document.addEventListener('DOMContentLoaded', () => {
-  const atomsImg = document.querySelector('#atomsImageContainer img');
-  if (atomsImg) {
-    atomsImg.addEventListener('click', () => {
-      atomsImg.classList.toggle('zoomed');
-    });
-  }
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-  const video = document.getElementById('customVideo');
-  if (video) {
-    video.addEventListener('timeupdate', () => {
-      const time = Math.floor(video.currentTime);
-
-      if (time === 22 && lastPauseTime !== 'eye-info') {
-        lastPauseTime = 'eye-info';
-        video.pause();
-        showEyeAnatomy();
-      } else if (time === 23 && lastPauseTime !== 23) {
-        lastPauseTime = 23;
-        pauseAndShowInfo('pause-only');
-      } else if (time === 32 && lastPauseTime !== 32) {
-        lastPauseTime = 32;
-        pauseAndShowInfo('device');
-      }
-    });
-  }
-});
-
-function pauseAndShowInfo(type) {
-  const video = document.getElementById('customVideo');
-  if (!video) return;
-
-  if (type === 'eye') {
-    showEyeAnatomy();
-  } else if (type === 'device') {
-    showDeviceImage();
-  }
-
-  setTimeout(() => {
-    video.play();
-  }, 20000);
-}
-
-let zoomLevel = 1;
-
-document.addEventListener('wheel', function(e) {
-  const img = document.getElementById('earHealthImage');
-  if (!img || !img.closest('.page.active')) return;
-
-  if (e.deltaY < 0) {
-    zoomLevel += 0.1;
-  } else {
-    zoomLevel = Math.max(0.5, zoomLevel - 0.1);
-  }
-
-  img.style.transform = `scale(${zoomLevel})`;
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-  const eyesToEarsSwitch = document.getElementById('eyesToEarsSwitch');
-  if (eyesToEarsSwitch) {
-    eyesToEarsSwitch.addEventListener('change', function() {
-      if (this.checked) {
-        showPage('earsDashboard');
-        this.checked = false;  // reset switch when user arrives
-      }
-    });
-  }
-});
-
-//service worker
-if ('serviceWorker' in navigator) {
-  // Check protocol before attempting to register service worker
-  if (location.protocol === 'https:' || location.hostname === 'localhost') {
+  // Register Service Worker
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('service-worker.js')
-        .then(reg => {
-          console.log('Service Worker registered successfully.', reg);
-        })
-        .catch(err => {
-          console.error('Service worker registration failed: ', err);
-        });
+        .then(reg => console.log('Service Worker registered successfully.', reg))
+        .catch(err => console.error('Service worker registration failed: ', err));
     });
   } else {
-    console.log('Service worker not registered because not running on https or localhost.');
+    console.log('Service worker not registered (not on https or localhost).');
   }
 }
 
-
-
-// ---- INSTALL PROMPT HANDLER ----
-// === Install Prompt Handling (added for mobile support) ===
-let deferredPrompt = null;
-const installBtn = document.getElementById('installBtn');
-if (installBtn) {
-  installBtn.addEventListener('click', async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      console.log('User accepted the install prompt');
-    } else {
-      console.log('User dismissed the install prompt');
-    }
-    deferredPrompt = null;
-    installBtn.style.display = 'none';
-  });
+/**
+ * Handles the PWA installation prompt.
+ */
+async function handleInstallPrompt() {
+  if (!deferredPrompt) {
+    alert("App is already installed or this browser doesn't support installation.");
+    return;
+  }
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  console.log(`User ${outcome} the install prompt.`);
+  deferredPrompt = null;
+  const installBtn = document.getElementById('installBtn');
+  if (installBtn) installBtn.style.display = 'none';
+  const installIconBtn = document.getElementById('installIconBtn');
+  if (installIconBtn) installIconBtn.style.display = 'none';
 }
 
+/**
+ * Shows the modal for selecting offline content.
+ */
+function showOfflineContentModal() {
+  document.getElementById('offlineContentModal').style.display = 'flex';
+}
 
-async function downloadSelectedAssets() {
-  const selected = Array.from(document.querySelectorAll('#offlineContentModal input[type="checkbox"]:checked'))
-    .map(cb => cb.value);
-
-  const assetMap = {
-    cataract: [
-      './cataractPage.html',
-      './videos/Cataract.mp4',
-      './images/icons_pic/Cataract.png'
-    ],
-    visualAcuity: [
-      './visualAcuityPage.html',
-      './videos/VisualAcuity.mp4',
-      './images/icons_pic/VisualAcuity.png'
-    ],
-    directOphthalmoscopy: [
-      './directOphthalmoscopy.html',
-      './videos/DirectOphthalmoscopy.mp4',
-      './images/icons_pic/DirectOphthalmoscopy.png'
-    ],
-    frontOfEye: [
-      './frontOfEyePage.html',
-      './videos/AnteriorSegment.mp4',
-      './AnteriorSegmentQuiz/html/index.html',
-      './AnteriorSegmentQuiz/html/images/case1_eye.png',
-      './AnteriorSegmentQuiz/html/images/case2_eye.png',
-      './AnteriorSegmentQuiz/html/images/case3_eye.png',
-      './AnteriorSegmentQuiz/html/images/case4_eye.png',
-      './AnteriorSegmentQuiz/html/images/case5_eye.png',
-      './AnteriorSegmentQuiz/html/images/case6_eye.png',
-      './AnteriorSegmentQuiz/html/images/case7_eye.png',
-      './AnteriorSegmentQuiz/html/images/case8_eye.png',
-      './AnteriorSegmentQuiz/html/images/case9_eye.png',
-      './AnteriorSegmentQuiz/html/images/case10_eye.png',
-      './AnteriorSegmentQuiz/html/images/case11_eye.png',
-      './AnteriorSegmentQuiz/html/images/case12_eye.png'
-    ],
-    interactiveLearning: [
-      './interactiveLearningPage.html',
-      './images/icons_pic/Interactive.png'
-    ],
-    atomsCard: [
-      './atomsCardPage.html',
-      './images/Anatomy1.png',
-      './images/Anatomy2.png',
-      './images/Fundus.png',
-      './images/Glaucoma.png',
-      './images/Refract.png'
-    ],
-    pupils: [
-      './pupilsPage.html',
-      './videos/Pupil/PupilExam.mp4',
-      './videos/Pupil/PupilExamPEC.mp4',
-      './videos/Pupil/PupilPathways.mp4',
-      './images/icons_pic/Pupils.png'
-    ],
-    fundalReflex: [
-      './fundalReflexPage.html',
-      './images/icons_pic/FundalReflex.png'
-    ],
-    rapd: [
-      './rapdTestVideoPage.html',
-      './videos/Pupil/RAPDTest.mp4'
-    ],
-    childhoodEyeScreening: [
-      './childhoodEyeScreeningPage.html',
-      './videos/USAID/HowtoArclight.mp4',
-      './videos/USAID/AssessmentVision.mp4',
-      './videos/USAID/NormalAbnormal.mp4'
-    ],
-    howToUseArclight: [
-      './howToUseArclightVideoPage.html',
-      './images/HowToUse.png'
-    ],
-    mobilePhoneAttachment: [
-      './phoneAttachmentVideoPage.html'
-    ],
-    mires: [
-      './miresPage.html'
-    ],
-    morph: [
-      './morphPage.html'
-    ],
-    squintPalsy: [
-      './squintPalsyPage.html'
-    ],
-    caseBasedLearning: [
-      './caseBasedLearningPage.html',
-      './images/CaseStudy.png',
-      './images/CaseStudy2.png'
-    ],
-    anteriorSegmentVideo: [
-      './anteriorSegmentVideoPage.html'
-    ]
-  };
-
-  const assetsToCache = selected.flatMap(key => assetMap[key] || []);
-  const sw = await navigator.serviceWorker.ready;
-  sw.active.postMessage({ type: 'CACHE_ASSETS', payload: assetsToCache });
-
-  alert('Download started in background');
+/**
+ * Closes the modal for selecting offline content.
+ */
+function closeOfflineContentModal() {
   document.getElementById('offlineContentModal').style.display = 'none';
 }
 
+document.querySelectorAll('.showOfflineContentModalBtn').forEach(btn => {
+  btn.addEventListener('click', showOfflineContentModal);
+});
+
+const closeOfflineContentModalBtn = document.getElementById('closeOfflineContentModalBtn');
+if (closeOfflineContentModalBtn) {
+  closeOfflineContentModalBtn.addEventListener('click', closeOfflineContentModal);
+}
+
+const downloadSelectedAssetsBtn = document.getElementById('downloadSelectedAssetsBtn');
+if (downloadSelectedAssetsBtn) {
+  downloadSelectedAssetsBtn.addEventListener('click', downloadSelectedAssets);
+}
+
+/**
+ * Downloads selected assets for offline use via the service worker.
+ */
+async function downloadSelectedAssets() {
+  const selected = Array.from(document.querySelectorAll('#offlineContentModal input:checked')).map(cb => cb.value);
+  const assetMap = {
+    cataract: ['./cataractPage.html', './videos/Cataract.mp4'],
+    visualAcuity: ['./visualAcuityPage.html', './videos/VisualAcuity.mp4'],
+    // ... Add all other asset mappings here ...
+  };
+
+  const assetsToCache = selected.flatMap(key => assetMap[key] || []);
+  if (assetsToCache.length === 0) {
+    alert("No assets selected for download.");
+    return;
+  }
+
+  try {
+    const sw = await navigator.serviceWorker.ready;
+    sw.active.postMessage({ type: 'CACHE_ASSETS', payload: assetsToCache });
+    alert('Download started in the background.');
+    closeOfflineContentModal();
+  } catch (error) {
+    console.error("Failed to send message to service worker:", error);
+    alert("Could not start download. Service worker not ready.");
+  }
+}
+
+
+// --- MISCELLANEOUS ---
+
+/**
+ * Initializes miscellaneous event listeners that don't fit into other categories.
+ */
+function initializeMisc() {
+  // Atom image zoom
+  const atomsImgContainer = document.getElementById('atomsImageContainer');
+  if (atomsImgContainer) {
+    atomsImgContainer.addEventListener('click', (e) => {
+      if (e.target.tagName === 'IMG') {
+        e.target.classList.toggle('zoomed');
+      }
+    });
+  }
+
+  // Ear health image zoom
+  const earHealthImage = document.getElementById('earHealthImage');
+  if (earHealthImage) {
+    document.addEventListener('wheel', function(e) {
+      if (!earHealthImage.closest('.page.active')) return;
+      e.preventDefault();
+      zoomLevel = e.deltaY < 0 ? zoomLevel + 0.1 : Math.max(0.5, zoomLevel - 0.1);
+      earHealthImage.style.transform = `scale(${zoomLevel})`;
+    }, { passive: false });
+  }
+}

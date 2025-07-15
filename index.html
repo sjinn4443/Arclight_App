@@ -9,21 +9,15 @@
   <meta name="theme-color" content="#b4342a" />
 </head>
 
+<body>
+
 <!-- Bottom Navigation -->
 <div id="homeButtonContainer" class="bottom-bar">
   <div class="nav-icon" id="backBtnGlobal">←</div>
   <div class="nav-icon" id="homeBtn">
     <img src="images/HomeIcon.png" alt="Home" style="width: 24px; height: 24px; margin-left: 30px;">
   </div>
-<!--<div class="nav-icon" id="installIconBtn">
-  <img src="images/install-icon.png" alt="Install" style="width: 28px; height: 28px;">
-</div>-->
-
-
 </div>
-
-
-<body>
 
  <!-- Splash Screen with Language Dropdown -->
 <div id="splashScreen" class="page active" style="background-color: black;">
@@ -73,13 +67,9 @@
         <option>Zulu</option>
       </select>
     </div>
-
-        <button id="installBtn" class="install-button" style="display:none; margin-top: 40px;">Add Arclight to Home Screen</button>
-
+    <button id="installBtn" class="install-button" style="display:none; margin-top: 40px;">Add Arclight to Home Screen</button>
   </div>
 </div>
-
-
 
 <!-- Onboarding Page -->
 <div id="onboarding" class="page">
@@ -87,20 +77,14 @@
     <div class="card">
       <h1>Welcome to Arclight</h1>
       <input type="text" id="username" class="fixed-input" placeholder="Enter your name" />
-
-      <!-- Step 1: Field Selector -->
       <select id="fieldSelect">
         <option disabled selected>Which field are you working in?</option>
         <option value="eyes">Eyes</option>
         <option value="ears">Ears</option>
         <option value="skin">Skin</option>
       </select>
-
-      <!-- Step 2: Job Selector -->
       <select id="jobSelect" class="hidden">
         <option disabled selected>What best describes your current role?</option>
-
-        <!-- Eyes -->
         <optgroup label="Eyes">
           <option>Ophthalmologist</option>
           <option>Optometrist</option>
@@ -117,8 +101,6 @@
           <option>Medical Student</option>
           <option>Eye Care Practitioner - Other</option>
         </optgroup>
-
-        <!-- Ears -->
         <optgroup label="Ears">
           <option>ENT Specialist</option>
           <option>Audiologist</option>
@@ -132,8 +114,6 @@
           <option>Health Extension Worker</option>
           <option>Medical Student</option>
         </optgroup>
-
-        <!-- Skin -->
         <optgroup label="Skin">
           <option>Dermatologist</option>
           <option>General Practitioner</option>
@@ -146,8 +126,6 @@
           <option>Medical Student</option>
         </optgroup>
       </select>
-
-      <!-- Step 3: If Medical Student is selected -->
       <select id="studentYearSelect" class="hidden">
         <option disabled selected>How many years have you studied?</option>
         <option value="1">Less than 1 year</option>
@@ -158,7 +136,6 @@
         <option value="5">5 years</option>
         <option value="6">6+ years</option>
       </select>
-      
       <select id="location">
         <option disabled selected>Where are you located at?</option>
         <option>Algeria</option>
@@ -211,7 +188,7 @@
         <option>Ears – Other</option>
         <option>Skin – Other</option>
       </select>
-      <button onclick="completeOnboarding()">Join Us!</button>
+      <button id="completeOnboardingBtn">Join Us!</button>
     </div>
   </div>
 </div>
@@ -221,8 +198,8 @@
   <div class="container">
     <div class="card">
       <h1>Learn About...</h1>
-      <button onclick="goToDashboard()">Eyes</button>
-      <button onclick="goToEarsDashboard()">Ears</button>
+      <button id="goToDashboardBtn">Eyes</button>
+      <button id="goToEarsDashboardBtn">Ears</button>
       <button disabled>Skin</button>
       <button disabled>ALAN</button>
       <p class="note">*Please note that only Eyes and Ears module is available at the moment</p>
@@ -234,74 +211,60 @@
 <div id="dashboard" class="page">
   <div class="container">
     <h1>Eyes</h1>
-  <div class="vertical-menu">
-      <button onclick="showLearningModules()">Learning Modules</button>
-      <button onclick="goToAtomsCard('eyes')">Atoms Card</button>
-       <button onclick="showOfflineContentModal()">Offline Contents</button>
+    <div class="vertical-menu">
+      <button id="showLearningModulesBtn">Learning Modules</button>
+      <button id="goToAtomsCardEyesBtn">Atoms Card</button>
+      <button class="showOfflineContentModalBtn">Offline Contents</button>
     </div>
     <div class="map-section">
       <p class="note">More to be added below.</p>
     </div>
   </div>
-
   <div class="switch-container" style="position: absolute; top: 20px; right: 20px; transform: scale(0.65);">
-  <label class="switch">
-    <input type="checkbox" id="eyesToEarsSwitch">
-    <span class="slider"></span>
-  </label>
-  <p>Go to Ears page</p>
-</div>
-
-
+    <label class="switch">
+      <input type="checkbox" id="eyesToEarsSwitch">
+      <span class="slider"></span>
+    </label>
+    <p>Go to Ears page</p>
+  </div>
 </div>
 
 <!-- Ears Dashboard -->
 <div id="earsDashboard" class="page">
   <div class="container">
     <h1>Ears</h1>
-
     <div class="vertical-menu">
-      <button onclick="showEarsLearningModules()">Learning Modules</button>
-      <button onclick="goToAtomsCard('ears')">Atoms Card</button>
-         <button onclick="showOfflineContentModal()">Offline Contents</button>
+      <button id="showEarsLearningModulesBtn">Learning Modules</button>
+      <button id="goToAtomsCardEarsBtn">Atoms Card</button>
+      <button class="showOfflineContentModalBtn">Offline Contents</button>
     </div>
-
     <div class="map-section">
       <p class="note">More to be added below.</p>
     </div>
   </div>
-
   <div class="switch-container" style="position: absolute; top: 20px; right: 20px; transform: scale(0.65);">
-  <label class="switch">
-    <input type="checkbox" id="earsToEyesSwitch">
-    <span class="slider"></span>
-  </label>
-  <p>Go to Eyes page</p>
+    <label class="switch">
+      <input type="checkbox" id="earsToEyesSwitch">
+      <span class="slider"></span>
+    </label>
+    <p>Go to Eyes page</p>
+  </div>
 </div>
-
-</div>
-
 
 <!-- Learning Modules (Intermediate Page) -->
 <div id="learningModules" class="page">
   <div class="container">
     <h1>Learning Modules</h1>
-
-    <button onclick="showCoreClinicalOphthalmicExamination()">Core Clinical Ophthalmic Examination</button>
-    <button onclick="showDiseases()">Diseases</button>
-    <button onclick="showArclight()">Arclight</button>
-
-
+    <button id="showCoreClinicalOphthalmicExaminationBtn">Core Clinical Ophthalmic Examination</button>
+    <button id="showDiseasesBtn">Diseases</button>
+    <button id="showArclightBtn">Arclight</button>
   </div>
 </div>
-
 
 <!-- Core Clinical Ophthalmic Examination -->
 <div id="coreClinicalOphthalmicExamination" class="page">
   <div class="container">
     <h1>Core Clinical Ophthalmic Examination</h1>
-
-    <!-- History Taking -->
     <div class="module-card" style="background-color: #b3b3b3; color: white;">
       <img src="images/icons_pic/HistoryTaking.png" alt="History Taking Icon" style="width: 80px; height: 80px; object-fit: contain; border-radius: 8px; margin-right: 12px;" />
       <div class="module-info">
@@ -311,8 +274,6 @@
         <span class="status" style="color: white;">Coming Soon</span>
       </div>
     </div>
-
-    <!-- Visual Acuity -->
     <div class="module-card" id="visualacuityCard" style="cursor:pointer;">
       <img src="images/icons_pic/VisualAcuity.png" alt="Visual Acuity Icon" style="width: 80px; height: 80px; object-fit: contain; border-radius: 8px; margin-right: 12px;" />
       <div class="module-info">
@@ -322,8 +283,6 @@
         <span class="status">Start!</span>
       </div>
     </div>
-
-    <!-- Pupils -->
     <div class="module-card" id="pupilsCard" style="cursor:pointer;">
       <img src="images/icons_pic/Pupils.png" alt="Pupils Icon" style="width: 80px; height: 80px; object-fit: contain; border-radius: 8px; margin-right: 12px;" />
       <div class="module-info">
@@ -333,9 +292,6 @@
         <span class="status">Start!</span>
       </div>
     </div>
-
-
-    <!-- Anterior Segment Module Card -->
     <div class="module-card" id="anteriorSegmentCard" style="cursor:pointer;">
       <img src="images/icons_pic/FrontOfEye.png" alt="Front of Eye Icon" style="width: 80px; height: 80px; object-fit: contain; border-radius: 8px; margin-right: 12px;" />
       <div class="module-info">
@@ -345,8 +301,6 @@
         <span class="status">Start!</span>
       </div>
     </div>
-
-    <!-- Fundal Reflex -->
     <div class="module-card" style="background-color: #b3b3b3; color: white;">
       <img src="images/icons_pic/FundalReflex.png" alt="Fundal Reflex Icon" style="width: 80px; height: 80px; object-fit: contain; border-radius: 8px; margin-right: 12px;" />
       <div class="module-info">
@@ -356,8 +310,6 @@
         <span class="status" style="color: white;">Coming Soon</span>
       </div>
     </div>
-
-    <!-- Direct Ophthalmoscopy -->
     <div class="module-card" id="ophthalmoscopyCard">
       <img src="images/icons_pic/DirectOphthalmoscopy.png" alt="Direct Ophthalmoscopy Icon" style="width: 80px; height: 80px; object-fit: contain; border-radius: 8px; margin-right: 12px;" />
       <div class="module-info">
@@ -367,8 +319,6 @@
         <span class="status">Start!</span>
       </div>
     </div>
-
-    <!-- Interactive Learning -->
     <div class="module-card" id="interactiveLearningCard" style="cursor:pointer;">
       <img src="images/icons_pic/Interactive.png" alt="Interactive Learning Icon" style="width: 80px; height: 80px; object-fit: contain; border-radius: 8px; margin-right: 12px;" />
       <div class="module-info">
@@ -378,19 +328,14 @@
         <span class="status">Start!</span>
       </div>
     </div>
-
-
   </div>
 </div>
-
-
-
 
 <!-- Visual Acuity Page -->
 <div id="visualAcuityPage" class="page">
   <div class="container">
     <div class="header">
-      <button onclick="showPage('coreClinicalOphthalmicExamination')">←</button>
+      <button data-page="coreClinicalOphthalmicExamination">←</button>
       <h3>Visual Acuity</h3>
     </div>
     <div class="video-container">
@@ -402,16 +347,10 @@
   </div>
 </div>
 
-
-
-
-
-
 <!-- Front of Eye Page -->
 <div id="frontOfEyePage" class="page">
   <div class="container">
     <h1>Front of Eye</h1>
-
     <div class="module-card" id="anteriorSegmentVideoCard">
       <img src="images/icons_pic/FrontOfEye.png" alt="Anterior Segment Video" style="width: 80px; height: 80px; object-fit: contain; border-radius: 8px; margin-right: 12px;" />
       <div class="module-info">
@@ -421,7 +360,6 @@
         <span class="status">Start!</span>
       </div>
     </div>
-
     <div class="module-card" id="caseBasedLearningCard">
       <img src="images/CaseStudy.png" alt="Case Based Learning" style="width: 80px; height: 80px; object-fit: contain; border-radius: 8px; margin-right: 12px;" />
       <div class="module-info">
@@ -431,7 +369,6 @@
         <span class="status">Start!</span>
       </div>
     </div>
-
   </div>
 </div>
 
@@ -439,7 +376,7 @@
 <div id="anteriorSegmentVideoPage" class="page">
   <div class="container">
     <div class="header">
-      <button onclick="showPage('frontOfEyePage')">←</button>
+      <button data-page="frontOfEyePage">←</button>
       <h3>Anterior Segment Video</h3>
     </div>
     <div class="video-container">
@@ -451,41 +388,34 @@
   </div>
 </div>
 
-
-
 <!-- Pupils Page -->
 <div id="pupilsPage" class="page">
   <div class="container">
     <h1>Pupils</h1>
-
     <div class="module-card">
       <div class="module-info">
         <h3>Pupil Full Examination</h3>
         <p>Video</p>
       </div>
     </div>
-
     <div class="module-card">
       <div class="module-info">
         <h3>Primary Eye Care Examination</h3>
         <p>Video</p>
       </div>
     </div>
-
     <div class="module-card">
       <div class="module-info">
         <h3>RAPD Test</h3>
         <p>Video | App</p>
       </div>
     </div>
-
     <div class="module-card">
       <div class="module-info">
         <h3>Pupil Pathways Explained</h3>
         <p>Video</p>
       </div>
     </div>
-
   </div>
 </div>
 
@@ -493,23 +423,18 @@
 <div id="rapdPage" class="page">
   <div class="container">
     <h1>RAPD Test</h1>
-
-    <!-- App card -->
     <div class="module-card" style="background:#777; color:white;">
       <div class="module-info">
         <h3>App</h3>
         <p style="color:white;">Coming soon</p>
       </div>
     </div>
-
-    <!-- Video card -->
     <div class="module-card" id="rapdVideoCard" style="cursor:pointer;">
       <div class="module-info">
         <h3>Video</h3>
         <p>Start!</p>
       </div>
     </div>
-
   </div>
 </div>
 
@@ -517,7 +442,7 @@
 <div id="rapdTestVideoPage" class="page">
   <div class="container">
     <div class="header">
-      <button onclick="showPage('rapdPage')">←</button>
+      <button data-page="rapdPage">←</button>
       <h3>RAPD Test Video</h3>
     </div>
     <div class="video-container">
@@ -529,13 +454,11 @@
   </div>
 </div>
 
-
-
 <!-- Pupil Exam PEC Page -->
 <div id="pupilExamPECPage" class="page">
   <div class="container">
     <div class="header">
-      <button onclick="showPage('pupilsPage')">←</button>
+      <button data-page="pupilsPage">←</button>
       <h3>Pupil Exam PEC</h3>
     </div>
     <div class="video-container">
@@ -551,7 +474,7 @@
 <div id="pupilFullExamPage" class="page">
   <div class="container">
     <div class="header">
-      <button onclick="showPage('pupilsPage')">←</button>
+      <button data-page="pupilsPage">←</button>
       <h3>Pupil Full Examination</h3>
     </div>
     <div class="video-container">
@@ -563,12 +486,11 @@
   </div>
 </div>
 
-
 <!-- Pupil Pathways Page -->
 <div id="pupilPathwaysPage" class="page">
   <div class="container">
     <div class="header">
-      <button onclick="showPage('pupilsPage')">←</button>
+      <button data-page="pupilsPage">←</button>
       <h3>Pupil Pathways</h3>
     </div>
     <div class="video-container">
@@ -580,7 +502,6 @@
   </div>
 </div>
 
-
 <!-- Direct Ophthalmoscopy Embedded Module -->
 <div id="directOphthalmoscopy" class="page">
   <div class="container">
@@ -590,9 +511,9 @@
     </div>
     <div class="video-container">
       <video id="customVideo" controls style="width: 100%; max-width: 100%;">
-  <source src="videos/DirectOphthalmoscopy.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+        <source src="videos/DirectOphthalmoscopy.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
     </div>
     <div class="toolbar">
       <button id="timestampBtn">☰</button>
@@ -603,45 +524,38 @@
     <div class="content-box" id="contentBox">
       <h4>Additional Information</h4>
       <p>This video demonstrates the use of the Arclight device for performing direct ophthalmoscopy. </p>
-    <div class="map-section">
-      <p class="note" style="align-content: left;"> *When additional information is displayed, the video will automatically pause for 20 seconds.</p>
-    </div>
-    
+      <div class="map-section">
+        <p class="note" style="align-content: left;"> *When additional information is displayed, the video will automatically pause for 20 seconds.</p>
       </div>
+    </div>
     <button class="quiz-btn" id="quizBtn">Take Quiz</button>
   </div>
 </div>
-
-
 
 <!-- Interactive Learning Page -->
 <div id="interactiveLearningPage" class="page">
   <div class="container">
     <h1>Interactive Learning</h1>
-
     <div class="module-card" id="miresCard" style="cursor:pointer;">
       <div class="module-info">
         <h3>Mires</h3>
         <p>Simulation</p>
       </div>
     </div>
-
     <div class="module-card" id="morphCard" style="cursor:pointer;">
       <div class="module-info">
         <h3>Morph</h3>
         <p>Simulation</p>
       </div>
     </div>
-
   </div>
 </div>
-
 
 <!-- Mires Page -->
 <div id="miresPage" class="page">
   <div class="container">
     <div class="header">
-      <button onclick="showPage('interactiveLearningPage')">←</button>
+      <button data-page="interactiveLearningPage">←</button>
       <h3>Mires</h3>
     </div>
     <div class="video-container">
@@ -654,7 +568,7 @@
 <div id="morphPage" class="page">
   <div class="container">
     <div class="header">
-      <button onclick="showPage('interactiveLearningPage')">←</button>
+      <button data-page="interactiveLearningPage">←</button>
       <h3>Morph</h3>
     </div>
     <div class="video-container">
@@ -663,16 +577,10 @@
   </div>
 </div>
 
-
-
-
-
 <!-- Diseases Page -->
 <div id="diseasesPage" class="page">
   <div class="container">
     <h1>Diseases</h1>
-
-    <!-- Uncorrected Refractive Error -->
     <div class="module-card" style="background-color: #b3b3b3; color: white;">
       <div class="module-info">
         <h3>Uncorrected Refractive Error</h3>
@@ -681,16 +589,12 @@
         <span class="status" style="color: white;">Coming Soon</span>
       </div>
     </div>
-
-    <!-- Cataract -->
     <div class="module-card" id="cataractCard" style="cursor:pointer;">
       <div class="module-info">
         <h3>Cataract</h3>
         <p>Interactive Learning</p>
       </div>
     </div>
-
-    <!-- Glaucoma -->
     <div class="module-card" style="background-color: #b3b3b3; color: white;">
       <div class="module-info">
         <h3>Glaucoma</h3>
@@ -699,8 +603,6 @@
         <span class="status" style="color: white;">Coming Soon</span>
       </div>
     </div>
-
-    <!-- Childhood Eye Screening -->
     <div class="module-card" id="childhoodEyeScreeningCard" style="cursor:pointer;">
       <div class="module-info">
         <h3>Childhood Eye Screening</h3>
@@ -709,8 +611,6 @@
         <span class="status">Start!</span>
       </div>
     </div>
-
-    <!-- Diabetic Retinopathy -->
     <div class="module-card" style="background-color: #b3b3b3; color: white;">
       <div class="module-info">
         <h3>Diabetic Retinopathy</h3>
@@ -719,8 +619,6 @@
         <span class="status" style="color: white;">Coming Soon</span>
       </div>
     </div>
-
-    <!-- Retinopathy of Prematurity -->
     <div class="module-card" style="background-color: #b3b3b3; color: white;">
       <div class="module-info">
         <h3>Retinopathy of Prematurity</h3>
@@ -729,26 +627,19 @@
         <span class="status" style="color: white;">Coming Soon</span>
       </div>
     </div>
-
-    <!-- Squint / Palsy -->
     <div class="module-card" id="squintPalsyCard" style="cursor:pointer;">
       <div class="module-info">
         <h3>Squint / Palsy</h3>
         <p>Interactive Learning</p>
       </div>
     </div>
-
   </div>
 </div>
-
-
 
 <!-- Childhood Eye Screening Page -->
 <div id="childhoodEyeScreeningPage" class="page">
   <div class="container">
     <h1>Childhood Eye Screening</h1>
-
-    <!-- How to Use the Arclight -->
     <div class="module-card" id="howToUseArclightCard" style="cursor:pointer;">
       <div class="module-info">
         <h3>How to Use the Arclight</h3>
@@ -757,9 +648,7 @@
         <span class="status">Start!</span>
       </div>
     </div>
-
-    <!-- Assessment of Eyes and Vision -->
-    <div class="module-card" style="cursor:pointer;">
+    <div class="module-card" data-page="assessmentVisionPage" style="cursor:pointer;">
       <div class="module-info">
         <h3>Assessment of Eyes and Vision</h3>
         <p>Video Content</p>
@@ -767,8 +656,6 @@
         <span class="status">Start!</span>
       </div>
     </div>
-
-    <!-- Fundal Reflex -->
     <div class="module-card" id="fundalreflexFRT" style="cursor:pointer;">
       <div class="module-info">
         <h3>Fundal Reflex</h3>
@@ -777,10 +664,7 @@
         <span class="status">Start!</span>
       </div>
     </div>
-
-
-    <!-- Normal and Abnormal Findings -->
-    <div class="module-card" style="cursor:pointer;">
+    <div class="module-card" data-page="normalAbnormalPage" style="cursor:pointer;">
       <div class="module-info">
         <h3>Normal and Abnormal Findings</h3>
         <p>Video Content</p>
@@ -788,7 +672,6 @@
         <span class="status">Start!</span>
       </div>
     </div>
-
   </div>
 </div>
 
@@ -796,7 +679,7 @@
 <div id="howToArclightPage" class="page">
   <div class="container">
     <div class="header">
-      <button onclick="showPage('childhoodEyeScreeningPage')">←</button>
+      <button data-page="childhoodEyeScreeningPage">←</button>
       <h3>How to Use the Arclight</h3>
     </div>
     <div class="video-container">
@@ -812,7 +695,7 @@
 <div id="assessmentVisionPage" class="page">
   <div class="container">
     <div class="header">
-      <button onclick="showPage('childhoodEyeScreeningPage')">←</button>
+      <button data-page="childhoodEyeScreeningPage">←</button>
       <h3>Assessment of Eyes and Vision</h3>
     </div>
     <div class="video-container">
@@ -828,7 +711,7 @@
 <div id="fundalReflexPage" class="page">
   <div class="container">
     <div class="header">
-      <button onclick="showPage('childhoodEyeScreeningPage')">←</button>
+      <button data-page="childhoodEyeScreeningPage">←</button>
       <h3>Fundal Reflex</h3>
     </div>
     <div class="video-container">
@@ -840,12 +723,11 @@
   </div>
 </div>
 
-
 <!-- Normal and Abnormal Findings Page -->
 <div id="normalAbnormalPage" class="page">
   <div class="container">
     <div class="header">
-      <button onclick="showPage('childhoodEyeScreeningPage')">←</button>
+      <button data-page="childhoodEyeScreeningPage">←</button>
       <h3>Normal and Abnormal Findings</h3>
     </div>
     <div class="video-container">
@@ -857,13 +739,11 @@
   </div>
 </div>
 
-
-
 <!-- Squint / Palsy Page -->
 <div id="squintPalsyPage" class="page">
   <div class="container">
     <div class="header">
-      <button onclick="showPage('diseasesPage')">←</button>
+      <button data-page="diseasesPage">←</button>
       <h3>Squint / Palsy</h3>
     </div>
     <div class="video-container">
@@ -876,7 +756,7 @@
 <div id="cataractPage" class="page">
   <div class="container">
     <div class="header">
-      <button onclick="showPage('diseasesPage')">←</button>
+      <button data-page="diseasesPage">←</button>
       <h3>Cataract</h3>
     </div>
     <div class="video-container">
@@ -885,19 +765,11 @@
   </div>
 </div>
 
-
-
-
-
-
-
 <!-- Arclight Page -->
 <div id="arclightPage" class="page">
   <div class="container">
     <h1>Arclight</h1>
-
-    <!-- How to Use Arclight Button -->
-   <div class="module-card" id="howToUseArclightArclightCard" style="cursor:pointer;">
+    <div class="module-card" id="howToUseArclightArclightCard" style="cursor:pointer;">
       <div class="module-info">
         <h3>How to Use Arclight</h3>
         <p>Video Learning</p>
@@ -905,8 +777,6 @@
         <span class="status">Start!</span>
       </div>
     </div>
-
-    <!-- Mobile Phone Attachment Page -->
     <div class="module-card" id="phoneAttachmentCard" style="cursor:pointer;">
       <div class="module-info">
         <h3>Mobile Phone Attachment</h3>
@@ -915,17 +785,14 @@
         <span class="status">Start!</span>
       </div>
     </div>
-
   </div>
 </div>
-
-
 
 <!-- How to Use Arclight Video Page -->
 <div id="howToUseArclightVideoPage" class="page">
   <div class="container">
     <div class="header">
-      <button onclick="showPage('arclightPage')">←</button>
+      <button data-page="arclightPage">←</button>
       <h3>How to Use Arclight</h3>
     </div>
     <div class="video-container">
@@ -941,7 +808,7 @@
 <div id="phoneAttachmentVideoPage" class="page">
   <div class="container">
     <div class="header">
-      <button onclick="showPage('arclightPage')">←</button>
+      <button data-page="arclightPage">←</button>
       <h3>Mobile Phone Attachment</h3>
     </div>
     <div class="video-container">
@@ -953,41 +820,26 @@
   </div>
 </div>
 
-
-
-
-
-
-
-
-
 <!-- Ears Learning Modules -->
 <div id="earsLearningModules" class="page">
   <div class="container">
     <h1>Learning Modules</h1>
-
-    <div class="module-card" style="cursor:pointer;" onclick="showPage('otoscopyPage')">
-    <div class="module-info">
-      <h3>Otoscopy</h3>
-      <p>Video Learning | PDF</p>
-      <div class="progress-bar"><div class="progress" style="width: 0%;"></div></div>
-      <span class="status">Start!</span>
+    <div class="module-card" data-page="otoscopyPage" style="cursor:pointer;">
+      <div class="module-info">
+        <h3>Otoscopy</h3>
+        <p>Video Learning | PDF</p>
+        <div class="progress-bar"><div class="progress" style="width: 0%;"></div></div>
+        <span class="status">Start!</span>
+      </div>
     </div>
-  </div>
-
-
-
-    <div class="module-card" style="cursor:pointer;" onclick="showPage('earHealthPage')">
-  <div class="module-info">
-    <h3>Ear Health & Hearing Loss</h3>
-    <p>Visual Content</p>
-    <div class="progress-bar"><div class="progress" style="width: 0%;"></div></div>
-    <span class="status">Start!</span>
-  </div>
-</div>
-
-
-
+    <div class="module-card" data-page="earHealthPage" style="cursor:pointer;">
+      <div class="module-info">
+        <h3>Ear Health & Hearing Loss</h3>
+        <p>Visual Content</p>
+        <div class="progress-bar"><div class="progress" style="width: 0%;"></div></div>
+        <span class="status">Start!</span>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -995,53 +847,45 @@
 <div id="otoscopyPage" class="page">
   <div class="container">
     <h1>Otoscopy</h1>
-
-    <div class="module-card" style="cursor:pointer;" onclick="showPage('howToExamineEarPage')">
-    <div class="module-info">
-      <h3>How to Examine the Ear</h3>
-      <p>Video Learning</p>
+    <div class="module-card" data-page="howToExamineEarPage" style="cursor:pointer;">
+      <div class="module-info">
+        <h3>How to Examine the Ear</h3>
+        <p>Video Learning</p>
+      </div>
     </div>
-  </div>
-
-  <div class="module-card" style="cursor:pointer;" onclick="showPage('earConditionsPage')">
-    <div class="module-info">
-      <h3>Otoscopy Poster</h3>
-      <p>Visual Content</p>
+    <div class="module-card" data-page="earConditionsPage" style="cursor:pointer;">
+      <div class="module-info">
+        <h3>Otoscopy Poster</h3>
+        <p>Visual Content</p>
+      </div>
     </div>
-  </div>
-
-  <div class="module-card" style="cursor:pointer;" onclick="showPage('earFlowchartPage')">
-    <div class="module-info">
-      <h3>Common Ear Conditions: Flowchart</h3>
-      <p>Visual Content</p>
+    <div class="module-card" data-page="earFlowchartPage" style="cursor:pointer;">
+      <div class="module-info">
+        <h3>Common Ear Conditions: Flowchart</h3>
+        <p>Visual Content</p>
+      </div>
     </div>
-  </div>
-
   </div>
 </div>
-
 
 <!-- Ear Health & Hearing Loss Page -->
 <div id="earHealthPage" class="page">
   <div class="container">
     <div class="header">
-      <button onclick="showPage('earsLearningModules')">←</button>
+      <button data-page="earsLearningModules">←</button>
       <h3>Ear Health & Hearing Loss</h3>
     </div>
-
     <div class="pdf-container" style="overflow: auto; max-height: 80vh; text-align: center;">
-  <img id="earHealthImage" src="images/Ears/HealthandDeafness.jpg" style="max-width: 100%; max-height: 100%; transition: transform 0.2s ease;" />
-</div>
-
+      <img id="earHealthImage" src="images/Ears/HealthandDeafness.jpg" style="max-width: 100%; max-height: 100%; transition: transform 0.2s ease;" />
+    </div>
   </div>
 </div>
-
 
 <!-- How to Examine the Ear Page -->
 <div id="howToExamineEarPage" class="page">
   <div class="container">
     <div class="header">
-      <button onclick="showPage('otoscopyPage')">←</button>
+      <button data-page="otoscopyPage">←</button>
       <h3>How to Examine the Ear</h3>
     </div>
     <div class="video-container">
@@ -1057,7 +901,7 @@
 <div id="earConditionsPage" class="page">
   <div class="container">
     <div class="header">
-      <button onclick="showPage('otoscopyPage')">←</button>
+      <button data-page="otoscopyPage">←</button>
       <h3>Otoscopy Poster</h3>
     </div>
     <div class="pdf-container" style="overflow:auto; max-height:80vh; text-align:center;">
@@ -1066,12 +910,11 @@
   </div>
 </div>
 
-
 <!-- Common Ear Conditions: Flowchart Page -->
 <div id="earFlowchartPage" class="page">
   <div class="container">
     <div class="header">
-      <button onclick="showPage('otoscopyPage')">←</button>
+      <button data-page="otoscopyPage">←</button>
       <h3>Common Ear Conditions: Flowchart</h3>
     </div>
     <div class="pdf-container" style="overflow:auto; max-height:80vh; text-align:center;">
@@ -1080,187 +923,89 @@
   </div>
 </div>
 
-
-
-
-
 <!-- Atoms Card Page -->
 <div id="atomsCardPage" class="page">
   <div class="atoms-title-bar">Atoms Card</div>
-  <!-- Top-right icons container -->
   <div class="top-right-icons">
     <button id="closeTOCBtn" title="Close Table of Contents">✖</button>
     <button id="tocToggleBtn" title="Table of Contents" style="
-  position: fixed;
-  top: 60px;
-  left: 10px;
-  z-index: 4000;
-  display: block;
-  background: #b4342a;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 12px;
-  font-size: 18px;
-  width: 40px;
-  height: 40px;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-">
-  ☰
-</button>
-
+      position: fixed; top: 60px; left: 10px; z-index: 4000; display: block;
+      background: #b4342a; color: white; border: none; border-radius: 6px;
+      padding: 8px 12px; font-size: 18px; width: 40px; height: 40px;
+      line-height: 1; display: flex; align-items: center; justify-content: center;">
+      ☰
+    </button>
   </div>
-
-  <!-- TOC Dropdown -->
   <div id="tocDropdown" class="toc-dropdown active">
     <div class="toc-tab">
-      <button id="eyesTab" class="active" onclick="showTOC('eyes')">Eyes</button>
-      <button id="earsTab" onclick="showTOC('ears')">Ears</button>
-
+      <button id="eyesTab" class="active">Eyes</button>
+      <button id="earsTab">Ears</button>
     </div>
-
     <ul id="tocList"></ul>
   </div>
-
-
-  <!-- Direct image display without rotation -->
-  <div style="width: 100vw; height: 100vh; overflow: hidden; display: flex; justify-content: center; align-items: center;" id="atomsImageContainer">
-</div>
+  <div style="width: 100vw; height: 100vh; overflow: hidden; display: flex; justify-content: center; align-items: center;" id="atomsImageContainer"></div>
 </div>
 
 <!-- Anterior Segment Quiz Iframe Page -->
 <div id="anteriorSegmentQuizPage" class="page">
-  <iframe 
-    src="AnteriorSegmentQuiz/html/index.html"
-    style="width: 100%; height: 90vh; border: none;"
-    title="Anterior Segment Quiz">
-  </iframe>
+  <iframe src="AnteriorSegmentQuiz/html/index.html" style="width: 100%; height: 90vh; border: none;" title="Anterior Segment Quiz"></iframe>
 </div>
 
+<div id="appRoot"></div>
 
-
-<script>
-  function showAtomsCard() {
-    showPage('atomsCardPage');
-  }
-</script>
-
-</div>
-
-
-<div id="homeButtonContainer">
-
-
-<!-- Fixed Search Bar at Bottom (Eyes page only) -->
 <div id="fixedSearchContainer" style="
-  position: fixed;
-  bottom: 70px; /* Just above the home button */
-  width: 100%;
-  padding: 0 10px;
-  z-index: 3999;
-  display: none;
-">
-  <div style="
-    position: relative;
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto;
-  ">
-    <input
-      id="searchCourses"
-      type="text"
-      placeholder="Search courses..."
-      style="
-        width: 70%;
-        padding: 6px 3px 6px 12px;
-        height: 30px; /* Half the original */
-        font-size: 14px;
-        border-radius: 12px;
-        border: 1px solid #ccc;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.06);
-        background-color: white;
-        margin-left: 20px;
-      "
-    />
-    <span style="
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 18px;
-      color: grey;
-      margin-right: 20px;
-    ">🔍</span>
+  position: fixed; bottom: 70px; width: 100%; padding: 0 10px;
+  z-index: 3999; display: none;">
+  <div style="position: relative; width: 100%; max-width: 600px; margin: 0 auto;">
+    <input id="searchCourses" type="text" placeholder="Search courses..." style="
+      width: 70%; padding: 6px 3px 6px 12px; height: 30px; font-size: 14px;
+      border-radius: 12px; border: 1px solid #ccc; box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+      background-color: white; margin-left: 20px;" />
+    <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      font-size: 18px; color: grey; margin-right: 20px;">🔍</span>
   </div>
 </div>
 
-
-  <div id="installPopup" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-background: white; border: 1px solid #ccc; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.3); z-index: 9999;">
+<div id="installPopup" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: white; border: 1px solid #ccc; padding: 20px; border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3); z-index: 9999;">
   <p>Install this app for a better experience!</p>
   <button id="installConfirmBtn">Install</button>
   <button id="installDismissBtn">Maybe later</button>
 </div>
 
-
-
-<!-- put near the end of <body> so it’s already in the DOM -->
-<button id="installBtn" hidden>Add to home screen</button>
 <script defer src="script.js"></script>
-
-  <button id="installBtn" style="
-  position: fixed; 
-  bottom: 20px; 
-  right: 20px; 
-  padding: 10px 20px; 
-  background-color: #b4342a; 
-  color: white; 
-  border: none; 
-  border-radius: 12px; 
-  z-index: 9999; 
-  display: none;">Install App</button>
-
 
 <!-- Offline Content Modal -->
 <div id="offlineContentModal" style="display: none;" class="modal-overlay">
   <div class="modal-box">
     <div class="modal-header">
       <span class="modal-title">Manage Offline Contents</span>
-      <button class="modal-close" onclick="closeOfflineContentModal()">×</button>
+      <button id="closeOfflineContentModalBtn" class="modal-close">×</button>
     </div>
     <div class="modal-content">
-
-    <label><input type="checkbox" value="cataract"> Cataract</label><br/>
-    <label><input type="checkbox" value="visualAcuity"> Visual Acuity</label><br/>
-    <label><input type="checkbox" value="directOphthalmoscopy"> Direct Ophthalmoscopy</label><br/>
-    <label><input type="checkbox" value="frontOfEye"> Front of Eye</label><br/>
-    <label><input type="checkbox" value="interactiveLearning"> Interactive Learning</label><br/>
-    <label><input type="checkbox" value="atomsCard"> Atoms Card</label><br/>
-    <label><input type="checkbox" value="pupils"> Pupils</label><br/>
-    <label><input type="checkbox" value="fundalReflex"> Fundal Reflex</label><br/>
-    <label><input type="checkbox" value="rapd"> RAPD Test</label><br/>
-    <label><input type="checkbox" value="childhoodEyeScreening"> Childhood Eye Screening</label><br/>
-    <label><input type="checkbox" value="howToUseArclight"> How to Use Arclight</label><br/>
-    <label><input type="checkbox" value="mobilePhoneAttachment"> Mobile Phone Attachment</label><br/>
-    <label><input type="checkbox" value="mires"> Mires</label><br/>
-    <label><input type="checkbox" value="morph"> Morph</label><br/>
-    <label><input type="checkbox" value="squintPalsy"> Squint / Palsy</label><br/>
-    <label><input type="checkbox" value="caseBasedLearning"> Case Based Learning</label><br/>
-    <label><input type="checkbox" value="anteriorSegmentVideo"> Anterior Segment Video</label><br/>
-
-    <br/>
-
-    <button onclick="downloadSelectedAssets()">Download Selected</button>
-  
+      <label><input type="checkbox" value="cataract"> Cataract</label><br/>
+      <label><input type="checkbox" value="visualAcuity"> Visual Acuity</label><br/>
+      <label><input type="checkbox" value="directOphthalmoscopy"> Direct Ophthalmoscopy</label><br/>
+      <label><input type="checkbox" value="frontOfEye"> Front of Eye</label><br/>
+      <label><input type="checkbox" value="interactiveLearning"> Interactive Learning</label><br/>
+      <label><input type="checkbox" value="atomsCard"> Atoms Card</label><br/>
+      <label><input type="checkbox" value="pupils"> Pupils</label><br/>
+      <label><input type="checkbox" value="fundalReflex"> Fundal Reflex</label><br/>
+      <label><input type="checkbox" value="rapd"> RAPD Test</label><br/>
+      <label><input type="checkbox" value="childhoodEyeScreening"> Childhood Eye Screening</label><br/>
+      <label><input type="checkbox" value="howToUseArclight"> How to Use Arclight</label><br/>
+      <label><input type="checkbox" value="mobilePhoneAttachment"> Mobile Phone Attachment</label><br/>
+      <label><input type="checkbox" value="mires"> Mires</label><br/>
+      <label><input type="checkbox" value="morph"> Morph</label><br/>
+      <label><input type="checkbox" value="squintPalsy"> Squint / Palsy</label><br/>
+      <label><input type="checkbox" value="caseBasedLearning"> Case Based Learning</label><br/>
+      <label><input type="checkbox" value="anteriorSegmentVideo"> Anterior Segment Video</label><br/>
+      <br/>
+      <button id="downloadSelectedAssetsBtn">Download Selected</button>
+    </div>
   </div>
 </div>
-
-
-
-
 
 </body>
 </html>

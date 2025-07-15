@@ -77,24 +77,6 @@ select, input {
   font-size: 14px;
 }
 
-.scroll-area {
-  display: flex;
-  overflow-x: auto;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.scroll-item {
-  min-width: 200px;
-  background: var(--card-bg);
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  text-align: center;
-  font-weight: bold;
-  cursor: pointer;
-  flex-shrink: 0;
-}
 
 .module-card {
   display: flex;
@@ -201,7 +183,7 @@ p.note {
   font-size: 14px;
 }
 
-.quiz-btn, .back-btn, .start-btn {
+.quiz-btn, .start-btn {
   width: calc(100% - 10px);
   margin: 5px;
   padding: 10px;
@@ -371,11 +353,6 @@ body.quiz-mode {
   border: none;
 }
 
-.start-btn.small {
-  transform: scale(1.1);
-  transform-origin: center;
-}
-
 #scoreResult {
   margin-top: 12px;
   font-size: 15px;
@@ -418,10 +395,6 @@ body.quiz-mode {
   display: none;
 }
 
-.full-width {
-  width: 100%;
-  box-sizing: border-box;
-}
 
 .vertical-menu button {
   background-color: var(--card-bg);
@@ -442,24 +415,6 @@ body.quiz-mode {
   box-sizing: border-box;
 }
 
-.search-bar.full-width {
-  background-color: var(--card-bg);
-  color: var(--font-color); /* Ensure text is visible */
-  border: 1px solid #ccc;
-  padding: 14px 20px;
-  font-size: 12px;
-  margin-bottom: 10px;
-  border-radius: 12px;
-  text-align: left;
-  width: 100%;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 60px; /* Adjust height if needed */
-  box-sizing: border-box;
-}
 
 
 
@@ -468,30 +423,6 @@ body.quiz-mode {
 
 
 /****Atoms Card ****/
-.landscape-only {
-  width: 100vh;
-  height: 100vw;
-  transform: rotate(90deg);
-  transform-origin: left top;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  background: #fff;
-  overflow: hidden;
-}
-
-/* Header like Quiz, but red */
-.atoms-header-rotated {
-  background: #b4342a;
-  color: white;
-  padding: 16px;
-  text-align: center;
-}
-
-.atoms-header-rotated h2 {
-  margin: 0;
-  font-size: 20px;
-}
 
 .atoms-title-bar {
   height: 55px;
@@ -529,20 +460,6 @@ body.quiz-mode {
 
 
 
-/* Body content */
-.atoms-content-rotated img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 12px;
-  display: block;
-  margin: 0 auto;
-}
-
-
-.rotated-text {
-  font-size: 18px;
-  color: #333;
-}
 
 .top-right-icons {
   position: fixed;
@@ -906,22 +823,6 @@ input:checked + .slider:before {
   font-size: 14px;
 }
 
-.modal-select {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px;
-  margin: 10px 0;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 14px;
-}
-
-.modal-select input[type="checkbox"] {
-  margin: 0;
-  width: 18px;
-  height: 18px;
-}
 
 #offlineContentModal label {
   justify-content: flex-start;
