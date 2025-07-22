@@ -585,8 +585,10 @@ function handleTOCItemClick(e) {
     }
   }
 
-  closeTOC();
+  // ✅ KEEP THE TOC OPEN: Don't auto-close the dropdown
+  // closeTOC(); ← removed
 }
+
 
 /**
  * Creates and appends an image to a container.
