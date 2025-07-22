@@ -1,0 +1,34 @@
+.fixed-input {
+  display: block;
+  padding: 10px;
+  margin: 10px 0;
+  width: 96.47%;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+select, input {
+  display: block;
+  padding: 10px;
+  margin: 10px 0;
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+textarea {
+  width: 100%;
+  height: 80px;
+  border-radius: 5px;
+  padding: 5px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  resize: none;
+}
+
+#fixedSearchContainer input:focus {
+  outline: none;
+  border-color: #b4342a;
+}

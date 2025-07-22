@@ -1,0 +1,67 @@
+.module-card {
+  display: flex;
+  align-items: center;
+  background: white;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  cursor: pointer;
+}
+
+.module-card img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-right: 12px;
+}
+
+.module-info h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.module-info p {
+  font-size: 12px;
+  color: #777;
+  margin: 4px 0;
+}
+
+.progress-bar {
+  background: #eee;
+  border-radius: 6px;
+  height: 6px;
+  margin: 6px 0;
+  width: 100%;
+}
+
+.progress {
+  background: #a18cff;
+  height: 100%;
+  border-radius: 6px;
+}
+
+.status {
+  font-size: 12px;
+  color: #777;
+}
+
+.vertical-menu button {
+  background-color: var(--card-bg);
+  color: var(--font-color); /* Ensure text is visible */
+  border: 1px solid #ccc;
+  padding: 14px 20px;
+  font-size: 16px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  text-align: center;
+  width: 100%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60px; /* Adjust height if needed */
+  box-sizing: border-box;
+}
