@@ -27,6 +27,7 @@ const ASSETS = [
   './style.css',
   './responsive.css',
   './manifest.json',
+  './css/all.min.css',
 
   /* Images – ZambiaTestApp core */
   './images/logo.png',
@@ -104,10 +105,14 @@ self.addEventListener('install', event => {
         ASSETS.map(url =>
           fetch(url)
             .then(response => {
-              if (response.ok) {
+              console.log(`Attempting to precache ${url}. Status: ${response.status}, OK: ${response.ok}, Type: ${response.type}`);
+              // Only cache responses that are OK (status 200) and not partial (status 206)
+              // Also, ensure it's a basic response to avoid issues with opaque responses if possible.
+              if (response.ok && response.status === 200 && response.type === 'basic') {
                 return cache.put(url, response);
               } else {
-                console.warn(`Skipping ${url}: HTTP ${response.status}`);
+                console.warn(`Skipping ${url} during precache: HTTP ${response.status} or not basic type.`);
+                return Promise.resolve(); // Ensure the promise resolves even if not cached
               }
             })
             .catch(err => {
@@ -154,37 +159,46 @@ self.addEventListener('fetch', event => {
   const { request } = event;
 
   // Navigations (HTML pages)
- if (request.mode === 'navigate') {
-  event.respondWith(
-    fetch(request)
-      .then(response => {
-        // clone **once**, then stash a copy in the cache
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
-        return response;               // send original response to the page
-      })
-      .catch(() => caches.match('./index.html')) // offline fallback
-  );
-  return; // bail – we handled this request
-}
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          // If the response is valid, cache it for future navigations
+          if (response.ok && response.type === 'basic') {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match('./index.html')) // offline fallback
+    );
+    return; // Important: stop processing here for navigation requests
+  }
 
   // Static assets – cache‑first
-  // FETCH – cache-first for static assets
-event.respondWith(
-  caches.match(request).then(cached => {
-    // ➊  Serve from cache if we already have it
-    if (cached) return cached;
+  event.respondWith(
+    caches.match(request).then(cachedResponse => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
 
-    // ➋  Otherwise fetch from network
-    return fetch(request).then(networkResp => {
-      // clone ONCE, then save the copy
-      const copy = networkResp.clone();
-      caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
-
-      // ➌  Return the original response to the page
-      return networkResp;
-    });
-  })
-);
-
+      // If not in cache, fetch from network
+      return fetch(request).then(networkResponse => {
+        // Check if the response is valid to cache (e.g., not a 206 Partial Content)
+        // Also, avoid caching opaque responses if they are problematic, though 206 is the primary issue here.
+        // For opaque responses, networkResponse.ok will be false, and networkResponse.status will be 0.
+        if (networkResponse && networkResponse.status !== 206 && networkResponse.ok) {
+          // Clone the response because it can only be consumed once
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(request, responseToCache);
+          });
+        }
+        return networkResponse;
+      }).catch(error => {
+        console.error('Fetch failed for static asset:', request.url, error);
+        throw error;
+      });
+    })
+  );
 });

@@ -4,28 +4,40 @@
  * Initializes event listeners for the splash screen and onboarding process.
  */
 function initializeOnboarding() {
-  // Splash screen language selection
+  // Splash screen transition
   window.addEventListener('load', () => {
-    const languageBox = document.getElementById('languageContainer');
+    const splash = document.getElementById('splashScreen');
+    const onboarding = document.getElementById('onboarding'); // Get onboarding element
+    const languageContainer = document.getElementById('languageContainer'); // Keep reference for now
+
     setTimeout(() => {
-      if (languageBox) languageBox.style.display = 'block';
-    }, 5000); // Show after 5 seconds
+      splash.classList.add('fade-out');
+      setTimeout(() => {
+        splash.classList.remove('active', 'fade-out');
+        splash.style.display = 'none'; // Ensure splash is completely hidden
+        if (onboarding) {
+          onboarding.classList.add('active'); // Directly activate onboarding page
+        }
+        if (languageContainer) {
+          languageContainer.style.display = 'none'; // Hide language container if it's still visible
+        }
+      }, 500);
+    }, 3000); // Show next screen after 3s
   });
 
-  const splashDropdown = document.getElementById('splashLanguageDropdown');
-  if (splashDropdown) {
-    splashDropdown.addEventListener('change', () => {
-      const splash = document.getElementById('splashScreen');
-      const onboarding = document.getElementById('onboarding');
-      if (splash && onboarding) {
-        splash.classList.add('fade-out');
-        setTimeout(() => {
-          splash.classList.remove('active', 'fade-out');
-          onboarding.classList.add('active');
-        }, 500);
-      }
-    });
-  }
+  // Temporarily remove installBtn logic for debugging white screen
+  // const splashDropdown = document.getElementById('splashLanguageDropdown');
+  // const installBtn = document.getElementById('installBtn');
+  // if (splashDropdown && installBtn) {
+  //   installBtn.addEventListener('click', () => {
+  //     const onboarding = document.getElementById('onboarding');
+  //     const languageContainer = document.getElementById('languageContainer');
+  //     if (onboarding && languageContainer) {
+  //       languageContainer.style.display = 'none';
+  //       onboarding.classList.add('active');
+  //     }
+  //   });
+  // }
 
   // Onboarding form logic
   const completeOnboardingBtn = document.getElementById('completeOnboardingBtn');
@@ -55,7 +67,7 @@ function initializeOnboarding() {
 function completeOnboarding() {
   const username = document.getElementById('username').value;
   const job = document.getElementById('jobSelect').value;
-  const language = document.getElementById('splashLanguageDropdown').value;
+  const language = document.getElementById('splashLanguageDropdown').value; // This will need to be handled if language dropdown is moved
 
   if (!username || !job || !language || language === "What's your preferred language?") {
     alert("Please complete all fields.");
